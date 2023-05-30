@@ -88,4 +88,6 @@ repositories {
 dependencies {
   implementation project(':expo-modules-core')
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
+  implementation fileTree(dir: 'libs', include: ['*.jar'])
+  implementation files('libs/fplib-reader-v3.jar')
 }
