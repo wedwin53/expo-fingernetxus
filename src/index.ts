@@ -13,4 +13,12 @@ export function requestBluetoothPermission() {
   return ExpoFingernetxusModule.requestBluetoothPermissionsAsync();
 }
 
+export async function connectToDevice(deviceId: string) {
+  return await ExpoFingernetxusModule.connectToDeviceAsync(deviceId);
+}
+
+export async function captureFingerprintImage() {
+  return await ExpoFingernetxusModule.captureFingerprintImageAsync();
+}
+
 

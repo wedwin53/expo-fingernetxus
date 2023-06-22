@@ -1,14 +1,21 @@
 package expo.modules.fingernetxus
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
+import android.os.Looper
+import android.util.Base64
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.fpreader.fpdevice.AsyncBluetoothReader
+import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import kotlinx.coroutines.*
 import org.json.JSONObject
 
 class ExpoFingernetxusModule : Module() {
@@ -20,6 +27,8 @@ class ExpoFingernetxusModule : Module() {
   var currentAdapter: BluetoothAdapter? = null
   var newDevicesList: ArrayList<String> = ArrayList()
   var pairedDevicesList: ArrayList<String> = ArrayList()
+  private val scope = CoroutineScope(Dispatchers.Main)
+
 
 
   // Each module class must implement the definition function. The definition consists of components
@@ -35,16 +44,16 @@ class ExpoFingernetxusModule : Module() {
     // Function to request bluetooth permissions
     Function("requestBluetoothPermissionsAsync") {
       val activity = appContext.activityProvider?.currentActivity
-        val bluetoothPermissions = arrayOf(
-            Manifest.permission.BLUETOOTH,
-            Manifest.permission.BLUETOOTH_ADMIN,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
+      val bluetoothPermissions = arrayOf(
+        Manifest.permission.BLUETOOTH,
+        Manifest.permission.BLUETOOTH_ADMIN,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+      )
 
       val applicationContext = activity?.applicationContext
 
-      if(applicationContext != null) {
+      if (applicationContext != null) {
         Log.i("ExpoFingernetxusModule", "Requesting bluetooth permissions")
 
         val permissionCheck = ContextCompat.checkSelfPermission(
@@ -55,7 +64,12 @@ class ExpoFingernetxusModule : Module() {
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
           ActivityCompat.requestPermissions(
             activity,
-            arrayOf(bluetoothPermissions[0], bluetoothPermissions[1], bluetoothPermissions[2], bluetoothPermissions[3]),
+            arrayOf(
+              bluetoothPermissions[0],
+              bluetoothPermissions[1],
+              bluetoothPermissions[2],
+              bluetoothPermissions[3]
+            ),
             1
           )
         } else {
@@ -69,7 +83,10 @@ class ExpoFingernetxusModule : Module() {
           } else {
             // If we're already discovering, stop it
             if (currentAdapter!!.isDiscovering) {
-              Log.i("ExpoFingernetxusModule", "Bluetooth adapter is already discovering, stopping discovery")
+              Log.i(
+                "ExpoFingernetxusModule",
+                "Bluetooth adapter is already discovering, stopping discovery"
+              )
               currentAdapter!!.cancelDiscovery()
             }
             // Request discover from BluetoothAdapter
@@ -96,11 +113,59 @@ class ExpoFingernetxusModule : Module() {
       return@Function pairedDevicesList
     }
 
-    // Function to Connect to a bluetooth device recieved from the JS side by parameter
+    // Function to Connect to a bluetooth device received from the JS side by parameter
+    AsyncFunction("connectToDeviceAsync") { deviceName: String, promise: Promise ->
+        scope.launch {
+        var asyncBluetoothReader: AsyncBluetoothReader = AsyncBluetoothReader()
+        val activity = appContext.activityProvider?.currentActivity
+        val applicationContext = activity?.applicationContext
+        if (applicationContext != null) {
+          Log.i("ExpoFingernetxusModule", "Connecting to device: $deviceName")
+         // Looper.prepare()
+          asyncBluetoothReader.stop()
+          val device = currentAdapter!!.getRemoteDevice(deviceName)
+          Log.i("ExpoFingernetxusModule", "Device: $device")
+          // Attempt to connect to the device
+          asyncBluetoothReader.connect(device)
+          Log.i("ExpoFingernetxusModule", "Connected to device: $device")
+        }
 
+        //return@Function "Connected to device: $deviceName"
+        promise.resolve("Connected to device: $deviceName")
+      }
+    }// end function connectToDeviceAsync
+
+    AsyncFunction("captureFingerprintImageAsync"){ promise: Promise ->
+      scope.launch {
+        var asyncBluetoothReader: AsyncBluetoothReader = AsyncBluetoothReader()
+        val activity = appContext.activityProvider?.currentActivity
+        val applicationContext = activity?.applicationContext
+        var image: String = ""
+        if (applicationContext != null) {
+          asyncBluetoothReader.setOnGetStdImageListener(object :
+            AsyncBluetoothReader.OnGetStdImageListener {
+
+            override fun onGetStdImageSuccess(data: ByteArray?) {
+              Log.i("ExpoFingernetxusModule", "Data: $data")
+              //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+              val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
+                Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                image = "data:image/png;base64,$base64Data"
+            }
+
+            override fun onGetStdImageFail() {
+              Log.i("ExpoFingernetxusModule", "Failed to get image")
+              image = "Failed to get image"
+            }
+          })
+
+
+          promise.resolve(image)
+        }
+      }
+    }// end function captureFingerprintImage
+
+    }
 
   }
 
-
-
-}
