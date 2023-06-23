@@ -8,6 +8,7 @@ export default function App() {
   const [devicesList, setDevicesList] = useState<[]>();
   const [devicesMap, setDevicesMap] = useState<Map<string, string> | any>(new Map());
   const [base64Image, setBase64Image] = useState<string | any>("");
+  const [candidateAddress, setCandidateAddress] = useState<string | any>("");
   
   const requestBluetoothPermissionRN = () => {
    const devicesResult = ExpoFingernetxus.requestBluetoothPermission();
