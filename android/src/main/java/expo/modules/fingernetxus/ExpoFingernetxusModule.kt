@@ -32,6 +32,7 @@ class ExpoFingernetxusModule : Module() {
     var pairedDevicesList: ArrayList<String> = ArrayList()
     private val scope = CoroutineScope(Dispatchers.Main)
     private lateinit var asyncBluetoothReader: AsyncBluetoothReader
+    private var image: String = ""
 
 
     // Each module class must implement the definition function. The definition consists of components
@@ -42,6 +43,8 @@ class ExpoFingernetxusModule : Module() {
         // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
         // The module will be accessible from `requireNativeModule('ExpoFingernetxus')` in JavaScript.
         Name("ExpoFingernetxus")
+
+        Events("onFingerpringCaptured")
 
 
         // Function to request bluetooth permissions
@@ -67,7 +70,8 @@ class ExpoFingernetxusModule : Module() {
 
                 val permissionCheckScan = ContextCompat.checkSelfPermission(
                     applicationContext,
-                    Manifest.permission.BLUETOOTH_SCAN)
+                    Manifest.permission.BLUETOOTH_SCAN
+                )
 
                 Log.i("ExpoFingernetxusModule", "Permission check: $permissionCheck")
                 if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
@@ -140,60 +144,77 @@ class ExpoFingernetxusModule : Module() {
                     Log.i("ExpoFingernetxusModule", "Connected to device: $device")
                 }
 
+                // Se monta la implementacion de las interfaces para la captura
+                asyncBluetoothReader.setOnGetStdImageListener(object :
+                    AsyncBluetoothReader.OnGetStdImageListener {
+
+                    override fun onGetStdImageSuccess(data: ByteArray?) {
+                        Log.i("ExpoFingernetxusModule", "Data: $data")
+                        //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+                        val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
+                        Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                        image = "data:image/png;base64,$base64Data"
+                        sendEvent("onChange", mapOf(
+                            "image" to image
+                        ))
+                    }
+
+                    override fun onGetStdImageFail() {
+                        Log.e("ExpoFingernetxusModule", "Failed to get image")
+                        image = "Failed to get image"
+                    }
+                })
+
+                asyncBluetoothReader.setOnGetResImageListener(object :
+                    AsyncBluetoothReader.OnGetResImageListener {
+
+                    override fun onGetResImageSuccess(data: ByteArray?) {
+                        Log.i("ExpoFingernetxusModule", "Data: $data")
+                        //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+                        val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
+                        Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                        image = "data:image/png;base64,$base64Data"
+                    }
+
+                    override fun onGetResImageFail() {
+                        Log.e("ExpoFingernetxusModule", "Failed to get image")
+                        image = "Failed to get image"
+                    }
+                })
+
+
                 //return@Function "Connected to device: $deviceName"
                 promise.resolve("Connected to device: $deviceName")
             }
         }// end function connectToDeviceAsync
 
         AsyncFunction("captureFingerprintImageAsync") { promise: Promise ->
-            scope.launch {
-                //asyncBluetoothReader = AsyncBluetoothReader()
-                val activity = appContext.activityProvider?.currentActivity
-                val applicationContext = activity?.applicationContext
-                var image: String = ""
-                if (applicationContext != null) {
-                    asyncBluetoothReader.setOnGetStdImageListener(object :
-                        AsyncBluetoothReader.OnGetStdImageListener {
 
-                        override fun onGetStdImageSuccess(data: ByteArray?) {
-                            Log.i("ExpoFingernetxusModule", "Data: $data")
-                            //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
-                            val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
-                            Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
-                            image = "data:image/png;base64,$base64Data"
-                            Toast.makeText(
-                                applicationContext,
-                                "Image captured $image",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-
-                        override fun onGetStdImageFail() {
-                            Log.e("ExpoFingernetxusModule", "Failed to get image")
-                            Toast.makeText(
-                                applicationContext,
-                                "Failed to get image",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            image = "Failed to get image"
-                        }
-                    })
-
-                    Log.i("ExpoFingernetxusModule", "Bluetooth reader state: ${asyncBluetoothReader.bluetoothReader.getState()}")
-                    Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected: ${asyncBluetoothReader.bluetoothReader.getState() == BluetoothReader.STATE_CONNECTED}")
-                    if(asyncBluetoothReader.bluetoothReader.getState() == BluetoothReader.STATE_CONNECTED){
+            val activity = appContext.activityProvider?.currentActivity
+            val applicationContext = activity?.applicationContext
+            if (applicationContext != null) {
+                scope.launch {
+                    Log.i(
+                        "ExpoFingernetxusModule",
+                        "Bluetooth reader state: ${asyncBluetoothReader.bluetoothReader.getState()}"
+                    )
+                    Log.i(
+                        "ExpoFingernetxusModule",
+                        "Bluetooth reader is connected: ${asyncBluetoothReader.bluetoothReader.getState() == BluetoothReader.STATE_CONNECTED}"
+                    )
+                    if (asyncBluetoothReader.bluetoothReader.getState() == BluetoothReader.STATE_CONNECTED) {
                         Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected")
                         asyncBluetoothReader.GetImageAndTemplate()
-                        asyncBluetoothReader.GetDeviceBat();
+//                        asyncBluetoothReader.GetDeviceBat();
                     }
                     Log.i("ExpoFingernetxusModule", "Inside captureFingerprintImageAsync")
 
+                } // end launch
+                promise.resolve(image)
 
-                    promise.resolve(image)
-                }
-            }
+            } // end if
+
         }// end function captureFingerprintImage
-
 
 
     }// end definition

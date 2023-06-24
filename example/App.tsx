@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native';
-import { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, Image } from 'react-native';
+import { useState, useEffect } from 'react';
 
 import * as ExpoFingernetxus from 'expo-fingernetxus';
 
@@ -30,7 +30,7 @@ export default function App() {
   const captureFingerprint = async () => {
     const response = await ExpoFingernetxus.captureFingerprintImage();
     console.log({response});
-    setBase64Image(response);
+    // setBase64Image(response);
   }
 
   const parseDevicesList = (devicesList: any) => {
@@ -45,6 +45,17 @@ export default function App() {
     setDevicesMap(deciveMap);
     return parsedDevicesList;
   }
+
+  useEffect(() => {
+    const sub = ExpoFingernetxus.addFingerprintCaptureListener((event: any) => {
+      console.log({event});
+      setBase64Image(event.image);
+    });
+    return () => {
+      sub.remove();
+    }
+  }, [])
+
 
 
   return (
@@ -62,7 +73,11 @@ export default function App() {
       </TouchableOpacity>}
       <View style={{height: 200, width: 200, backgroundColor: 'ligthgray'}}>
         <Text>Image</Text>
-        <Text>{base64Image}</Text>
+        {
+          base64Image &&
+        <Image source={{uri: base64Image}} style={{height: 200, width: 200}} />
+
+        }
       </View>
       <Text>Devices Found:</Text>
       
