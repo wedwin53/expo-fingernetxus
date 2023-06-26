@@ -30,7 +30,7 @@ export default function App() {
   const captureFingerprint = async () => {
     const response = await ExpoFingernetxus.captureFingerprintImage();
     console.log({response});
-    // setBase64Image(response);
+    setBase64Image(response);
   }
 
   const parseDevicesList = (devicesList: any) => {

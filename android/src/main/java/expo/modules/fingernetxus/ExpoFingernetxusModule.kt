@@ -154,7 +154,7 @@ class ExpoFingernetxusModule : Module() {
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
                         Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
                         image = "data:image/png;base64,$base64Data"
-                        sendEvent("onChange", mapOf(
+                        sendEvent("onFingerpringCaptured", mapOf(
                             "image" to image
                         ))
                     }
@@ -174,6 +174,9 @@ class ExpoFingernetxusModule : Module() {
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
                         Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
                         image = "data:image/png;base64,$base64Data"
+                        sendEvent("onFingerpringCaptured", mapOf(
+                            "image" to image
+                        ))
                     }
 
                     override fun onGetResImageFail() {
@@ -182,7 +185,9 @@ class ExpoFingernetxusModule : Module() {
                     }
                 })
 
-
+                sendEvent("onFingerpringCaptured", mapOf(
+                    "image" to image
+                ))
                 //return@Function "Connected to device: $deviceName"
                 promise.resolve("Connected to device: $deviceName")
             }
@@ -210,6 +215,10 @@ class ExpoFingernetxusModule : Module() {
                     Log.i("ExpoFingernetxusModule", "Inside captureFingerprintImageAsync")
 
                 } // end launch
+
+                sendEvent("onFingerpringCaptured", mapOf(
+                    "image" to image
+                ))
                 promise.resolve(image)
 
             } // end if
