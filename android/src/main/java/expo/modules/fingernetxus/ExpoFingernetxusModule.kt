@@ -31,7 +31,7 @@ class ExpoFingernetxusModule : Module() {
     var newDevicesList: ArrayList<String> = ArrayList()
     var pairedDevicesList: ArrayList<String> = ArrayList()
     private val scope = CoroutineScope(Dispatchers.Main)
-    private lateinit var asyncBluetoothReader: AsyncBluetoothReader
+    private var asyncBluetoothReader: AsyncBluetoothReader? = null
     private var image: String = ""
 
 
@@ -55,7 +55,14 @@ class ExpoFingernetxusModule : Module() {
                 Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.BLUETOOTH_SCAN
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+
+            val btPermissionsHighLevelSDK = arrayOf(
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE
             )
 
             val applicationContext = activity?.applicationContext
@@ -68,22 +75,24 @@ class ExpoFingernetxusModule : Module() {
                     Manifest.permission.BLUETOOTH
                 )
 
-                val permissionCheckScan = ContextCompat.checkSelfPermission(
+                val permissionCheckSDKHightLevel = ContextCompat.checkSelfPermission(
                     applicationContext,
-                    Manifest.permission.BLUETOOTH_SCAN
+                    Manifest.permission.BLUETOOTH_CONNECT
                 )
 
                 Log.i("ExpoFingernetxusModule", "Permission check: $permissionCheck")
-                if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                if (permissionCheck != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    // Permission for Android 11 and below
                     ActivityCompat.requestPermissions(
                         activity,
-                        arrayOf(
-                            bluetoothPermissions[0],
-                            bluetoothPermissions[1],
-                            bluetoothPermissions[2],
-                            bluetoothPermissions[3],
-//                            bluetoothPermissions[4]
-                        ),
+                        bluetoothPermissions,
+                        1
+                    )
+                } else if(permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+                    // Permission for Android 12 and above
+                    ActivityCompat.requestPermissions(
+                        activity,
+                        btPermissionsHighLevelSDK,
                         1
                     )
                 } else {
@@ -136,16 +145,16 @@ class ExpoFingernetxusModule : Module() {
                 if (applicationContext != null) {
                     Log.i("ExpoFingernetxusModule", "Connecting to device: $deviceName")
                     // Looper.prepare()
-                    asyncBluetoothReader.stop()
+                    asyncBluetoothReader!!.stop()
                     val device = currentAdapter!!.getRemoteDevice(deviceName)
                     Log.i("ExpoFingernetxusModule", "Device: $device")
                     // Attempt to connect to the device
-                    asyncBluetoothReader.connect(device)
+                    asyncBluetoothReader!!.connect(device)
                     Log.i("ExpoFingernetxusModule", "Connected to device: $device")
                 }
 
                 // Se monta la implementacion de las interfaces para la captura
-                asyncBluetoothReader.setOnGetStdImageListener(object :
+                asyncBluetoothReader!!.setOnGetStdImageListener(object :
                     AsyncBluetoothReader.OnGetStdImageListener {
 
                     override fun onGetStdImageSuccess(data: ByteArray?) {
@@ -165,7 +174,7 @@ class ExpoFingernetxusModule : Module() {
                     }
                 })
 
-                asyncBluetoothReader.setOnGetResImageListener(object :
+                asyncBluetoothReader!!.setOnGetResImageListener(object :
                     AsyncBluetoothReader.OnGetResImageListener {
 
                     override fun onGetResImageSuccess(data: ByteArray?) {
@@ -201,16 +210,22 @@ class ExpoFingernetxusModule : Module() {
                 scope.launch {
                     Log.i(
                         "ExpoFingernetxusModule",
-                        "Bluetooth reader state: ${asyncBluetoothReader.bluetoothReader.getState()}"
+                        "Bluetooth reader state: ${asyncBluetoothReader?.bluetoothReader?.getState()}"
                     )
                     Log.i(
                         "ExpoFingernetxusModule",
-                        "Bluetooth reader is connected: ${asyncBluetoothReader.bluetoothReader.getState() == BluetoothReader.STATE_CONNECTED}"
+                        "Bluetooth reader is connected: ${asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED}"
                     )
-                    if (asyncBluetoothReader.bluetoothReader.getState() == BluetoothReader.STATE_CONNECTED) {
+                    if (asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED) {
                         Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected")
-                        asyncBluetoothReader.GetImageAndTemplate()
-//                        asyncBluetoothReader.GetDeviceBat();
+                        // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
+                        if (asyncBluetoothReader == null) {
+                            image = "NO_CONNECTION"
+                        }else {
+                            // calls the function to get the image
+                            asyncBluetoothReader!!.GetImageAndTemplate()
+                        }
+
                     }
                     Log.i("ExpoFingernetxusModule", "Inside captureFingerprintImageAsync")
 
