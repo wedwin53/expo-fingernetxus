@@ -125,6 +125,13 @@ export default function App() {
       >
         <Text style={styles.buttonText} >Capture Template</Text>
       </TouchableOpacity>}
+      {/* Template Enrol */}
+      {result && <TouchableOpacity onPress={enrolTemplate}
+      style={styles.button}
+      > 
+        <Text style={styles.buttonText} >Enrol Template</Text>
+      </TouchableOpacity>}
+      
 
       <View style={{height: 100, width: 100, backgroundColor: 'ligthgray'}}>
         <Text>Image</Text>

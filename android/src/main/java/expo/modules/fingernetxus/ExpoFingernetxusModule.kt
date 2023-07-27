@@ -266,7 +266,7 @@ class ExpoFingernetxusModule : Module() {
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
                         Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
 
-                        sendEvent("onEnrolTemplate", mapOf(
+                        sendEvent("onCaptureTemplate", mapOf(
                             "template" to base64Data
                         ))
                     }
