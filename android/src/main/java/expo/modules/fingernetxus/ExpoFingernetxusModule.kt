@@ -60,9 +60,9 @@ class ExpoFingernetxusModule : Module() {
         // The module will be accessible from `requireNativeModule('ExpoFingernetxus')` in JavaScript.
         Name("ExpoFingernetxus")
 
-        Events("onFingerpringCaptured")
+        Events("onFingerpringCaptured", "onCaptureTemplate")
 
-        Events("onCaptureTemplate")
+        //Events("onCaptureTemplate")
 
         // If bluetooth is not active on the device, this function will request to turn it on
         Function("requestBluetoothAsync") {
