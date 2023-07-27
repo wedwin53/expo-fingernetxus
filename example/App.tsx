@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, Image, SafeAreaView } from 'react-native';
 import { useState, useEffect } from 'react';
 
 import * as ExpoFingernetxus from 'expo-fingernetxus';
@@ -9,6 +9,7 @@ export default function App() {
   const [devicesMap, setDevicesMap] = useState<Map<string, string> | any>(new Map());
   const [base64Image, setBase64Image] = useState<string | any>("");
   const [candidateAddress, setCandidateAddress] = useState<string | any>("");
+  const [template, setTemplate] = useState<string | any>("");
   
   const requestBluetoothPermissionRN = () => {
    const devicesResult = ExpoFingernetxus.requestBluetoothPermission();
@@ -56,27 +57,73 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const btcOn = ExpoFingernetxus.requestTurnOnBluetooth();
+    console.log({btcOn});
+  }, [])
+
+  useEffect(() => {
+    const sub = ExpoFingernetxus.addFingerprintCaptureTemplateListener((event: any) => {
+      console.log({template: event});
+      setTemplate(event?.template);
+    });
+    return () => {
+      sub.remove();
+    }
+  }, [])
+
+  const captureTemplate = async () => {
+    const response = await ExpoFingernetxus.captureFingerprintTemplate();
+    console.log({captureTemplate:response});    
+  }
+
+  const getBTState = () => {
+    const response = ExpoFingernetxus.getBluetoothState();
+    console.log({getBTState: response});
+  }
 
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text>Permission Status: {result}</Text>
       <TouchableOpacity onPress={requestBluetoothPermissionRN} 
       style={styles.button}
       >
         <Text style={styles.buttonText} >Request Permission</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity onPress={getBTState} 
+      style={styles.button}
+      >
+        <Text style={styles.buttonText} >Get Bluetooth State</Text>
+      </TouchableOpacity>
+
       {result && <TouchableOpacity onPress={captureFingerprint}
       style={styles.button}
       >
         <Text style={styles.buttonText} >Capture Fingerprint</Text>
       </TouchableOpacity>}
+      {/* Template Capture */}
+      {result && <TouchableOpacity onPress={captureTemplate}
+      style={styles.button}
+      >
+        <Text style={styles.buttonText} >Capture Template</Text>
+      </TouchableOpacity>}
+
       <View style={{height: 200, width: 200, backgroundColor: 'ligthgray'}}>
         <Text>Image</Text>
         {
           base64Image &&
         <Image source={{uri: base64Image}} style={{height: 200, width: 200}} />
 
+        }
+      </View>
+      {/* Template */}
+      <View style={{height: 100, width: 200, backgroundColor: 'ligthgray'}}>
+        <Text>Template</Text>
+        {
+          template &&
+        <Text>{template}</Text>
         }
       </View>
       <Text>Devices Found:</Text>
@@ -86,7 +133,7 @@ export default function App() {
         renderItem={({ item }) => <DeviceCard name={item} handleConnect={connectToDevice} />} 
       />
 
-    </View>
+    </SafeAreaView>
   );
 }
 

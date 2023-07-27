@@ -31,3 +31,20 @@ export function addFingerprintCaptureListener(
   return emitter.addListener('onFingerpringCaptured', listener);
 }
 
+export function requestTurnOnBluetooth() {
+  return ExpoFingernetxusModule.requestBluetoothAsync();
+}
+
+export function addFingerprintCaptureTemplateListener(
+  listener: (event: any) => void
+): Subscription { 
+  return emitter.addListener('onCaptureTemplate', listener);
+}
+
+export function getBluetoothState() {
+  return ExpoFingernetxusModule.getBluetoothConnectionState();
+}
+
+export async function captureFingerprintTemplate() {
+  return await ExpoFingernetxusModule.captureTemplate();
+}

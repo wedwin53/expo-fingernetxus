@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "7a57c78a-1204-4cbb-9526-d1f4c64c53f7"
+      }
+    },
+    "android": {
+      "package": "com.qubitsadmin.expofingernetxus"
+    }
+  }
+}
