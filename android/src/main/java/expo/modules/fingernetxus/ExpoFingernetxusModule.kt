@@ -1,16 +1,11 @@
 package expo.modules.fingernetxus
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Build
-import android.os.Looper
 import android.util.Base64
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.fpreader.fpdevice.AsyncBluetoothReader
@@ -18,8 +13,9 @@ import com.fpreader.fpdevice.BluetoothReader
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import kotlinx.coroutines.*
-import org.json.JSONObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class ExpoFingernetxusModule : Module() {
 
@@ -35,6 +31,10 @@ class ExpoFingernetxusModule : Module() {
     private var image: String = ""
     private var template: String = ""
     private var enrolResult: String = ""
+    var mRefData = ByteArray(512)
+    var mRefSize = 0
+    var mMatData = ByteArray(512)
+    var mMatSize = 0
 
     private val bluetoothPermissions = arrayOf(
         Manifest.permission.BLUETOOTH,
@@ -260,22 +260,23 @@ class ExpoFingernetxusModule : Module() {
                 asyncBluetoothReader!!.setOnCaptureTemplateListener(object :
                     AsyncBluetoothReader.OnCaptureTemplateListener {
 
-                    override fun onCaptureTemplateSuccess(data: ByteArray?) {
-                        Log.i("ExpoFingernetxusModule", "Data: $data")
-                        //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
-                        val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
-                        Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                    override fun onCaptureTemplateSuccess(model: ByteArray) {
+                        System.arraycopy(model, 0, mMatData, 0, model.size)
+                        mMatSize = model.size
 
-                        sendEvent("onCaptureTemplate", mapOf(
-                            "template" to base64Data
-                        ))
+                        if (mRefSize > 0) {
+                            val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
+                            sendEvent("onCaptureTemplate", mapOf(
+                                "captureResult" to score
+                            ))
+                        }
                     }
 
                     override fun onCaptureTemplateFail() {
-                        Log.e("ExpoFingernetxusModule", "Failed to get Template")
-
+                        Log.e("ExpoFingernetxusModule", "Failed to capture template")
                     }
                 })
+
                 // Enroll template
                 asyncBluetoothReader!!.setOnEnrolTemplateListener(object :
                     AsyncBluetoothReader.OnEnrolTemplateListener {
@@ -295,6 +296,26 @@ class ExpoFingernetxusModule : Module() {
                         Log.e("ExpoFingernetxusModule", "Failed to Enrol")
                     }
                 })
+
+                // upEnrol Template
+//                asyncBluetoothReader!!.setOnUpTemplateListener(object :
+//                    AsyncBluetoothReader.OnUpTemplateListener {
+//
+//                    override fun onUpTemplateSuccess(data: ByteArray?) {
+//                        Log.i("ExpoFingernetxusModule", "Data: $data")
+//                        //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+//                        val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
+//                        Log.i("ExpoFingernetxusModule", "onUpTemplate data: $base64Data")
+//
+//                        sendEvent("onUpTemplate", mapOf(
+//                            "upTemplate" to base64Data
+//                        ))
+//                    }
+//
+//                    override fun onUpTemplateFail() {
+//                        Log.e("ExpoFingernetxusModule", "Failed to Up Template")
+//                    }
+//                })
 
 
                 //return@Function "Connected to device: $deviceName"
