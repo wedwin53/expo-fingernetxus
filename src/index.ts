@@ -48,3 +48,13 @@ export function getBluetoothState() {
 export async function captureFingerprintTemplate() {
   return await ExpoFingernetxusModule.captureTemplate();
 }
+
+export function addEnrolTemplateListener(
+  listener: (event: any) => void
+): Subscription { 
+  return emitter.addListener('onEnrolTemplate', listener);
+}
+
+export async function onEnrolTemplateAsync() {
+  return await ExpoFingernetxusModule.enrolTemplate();
+}

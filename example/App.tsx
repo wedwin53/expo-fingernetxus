@@ -10,6 +10,7 @@ export default function App() {
   const [base64Image, setBase64Image] = useState<string | any>("");
   const [candidateAddress, setCandidateAddress] = useState<string | any>("");
   const [template, setTemplate] = useState<string | any>("");
+  const [enrolResult, setEnrolResult] = useState<string | any>("");
   
   const requestBluetoothPermissionRN = () => {
    const devicesResult = ExpoFingernetxus.requestBluetoothPermission();
@@ -50,7 +51,7 @@ export default function App() {
   useEffect(() => {
     const sub = ExpoFingernetxus.addFingerprintCaptureListener((event: any) => {
       console.log({event});
-      setBase64Image(event.image);
+      setBase64Image(event?.image);
     });
     return () => {
       sub.remove();
@@ -72,9 +73,24 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const sub = ExpoFingernetxus.addEnrolTemplateListener((event: any) => {
+      console.log({enrolResult: event});
+      setEnrolResult(event?.enrolResult);
+    });
+    return () => {
+      sub.remove();
+    }
+  }, [])
+
   const captureTemplate = async () => {
     const response = await ExpoFingernetxus.captureFingerprintTemplate();
     console.log({captureTemplate:response});    
+  }
+
+  const enrolTemplate = async () => {
+    const response = await ExpoFingernetxus.onEnrolTemplateAsync();
+    console.log({enrolTemplate:response});
   }
 
   const getBTState = () => {
@@ -110,11 +126,11 @@ export default function App() {
         <Text style={styles.buttonText} >Capture Template</Text>
       </TouchableOpacity>}
 
-      <View style={{height: 200, width: 200, backgroundColor: 'ligthgray'}}>
+      <View style={{height: 100, width: 100, backgroundColor: 'ligthgray'}}>
         <Text>Image</Text>
         {
           base64Image &&
-        <Image source={{uri: base64Image}} style={{height: 200, width: 200}} />
+        <Image source={{uri: base64Image}} style={{height: 100, width: 100}} />
 
         }
       </View>
@@ -124,6 +140,14 @@ export default function App() {
         {
           template &&
         <Text>{template}</Text>
+        }
+      </View>
+      {/* enrolment result */}
+      <View style={{height: 100, width: 200, backgroundColor: 'ligthgray'}}>
+        <Text>Enrolment Result</Text>
+        {
+          enrolResult &&
+        <Text>{enrolResult}</Text>
         }
       </View>
       <Text>Devices Found:</Text>

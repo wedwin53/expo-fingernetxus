@@ -34,6 +34,7 @@ class ExpoFingernetxusModule : Module() {
     private var asyncBluetoothReader: AsyncBluetoothReader? = null
     private var image: String = ""
     private var template: String = ""
+    private var enrolResult: String = ""
 
     private val bluetoothPermissions = arrayOf(
         Manifest.permission.BLUETOOTH,
@@ -60,7 +61,7 @@ class ExpoFingernetxusModule : Module() {
         // The module will be accessible from `requireNativeModule('ExpoFingernetxus')` in JavaScript.
         Name("ExpoFingernetxus")
 
-        Events("onFingerpringCaptured", "onCaptureTemplate")
+        Events("onFingerpringCaptured", "onCaptureTemplate", "onEnrolTemplate")
 
         //Events("onCaptureTemplate")
 
@@ -265,7 +266,7 @@ class ExpoFingernetxusModule : Module() {
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
                         Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
 
-                        sendEvent("onCaptureTemplate", mapOf(
+                        sendEvent("onEnrolTemplate", mapOf(
                             "template" to base64Data
                         ))
                     }
@@ -275,6 +276,27 @@ class ExpoFingernetxusModule : Module() {
 
                     }
                 })
+                // Enroll template
+                asyncBluetoothReader!!.setOnEnrolTemplateListener(object :
+                    AsyncBluetoothReader.OnEnrolTemplateListener {
+
+                    override fun onEnrolTemplateSuccess(data: ByteArray?) {
+                        Log.i("ExpoFingernetxusModule", "Data: $data")
+                        //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+                        val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
+                        Log.i("ExpoFingernetxusModule", "onEnrolTemplate data: $base64Data")
+
+                        sendEvent("onEnrolTemplate", mapOf(
+                            "enrolResult" to base64Data
+                        ))
+                    }
+
+                    override fun onEnrolTemplateFail() {
+                        Log.e("ExpoFingernetxusModule", "Failed to Enrol")
+                    }
+                })
+
+
                 //return@Function "Connected to device: $deviceName"
                 promise.resolve("Connected to device: $deviceName")
             }
@@ -367,6 +389,40 @@ class ExpoFingernetxusModule : Module() {
                 return@Function isBTEnabled
             }
         } // End getBlueThoothConnectionState
+
+        AsyncFunction("enrolTemplate") { promise: Promise ->
+
+            val activity = appContext.activityProvider?.currentActivity
+            val applicationContext = activity?.applicationContext
+            if (applicationContext != null) {
+                scope.launch {
+                    Log.i(
+                        "ExpoFingernetxusModule",
+                        "Bluetooth reader state: ${asyncBluetoothReader?.bluetoothReader?.getState()}"
+                    )
+                    Log.i(
+                        "ExpoFingernetxusModule",
+                        "Bluetooth reader is connected: ${asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED}"
+                    )
+                    if (asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED) {
+                        Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected")
+                        // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
+                        if (asyncBluetoothReader == null) {
+                            enrolResult = "NO_CONNECTION"
+                        }else {
+                            // calls the function to enrol template
+                            asyncBluetoothReader!!.EnrolTempatelNoImage()
+                        }
+
+                    }
+                    Log.i("ExpoFingernetxusModule", "Inside enrolTemplate")
+
+                } // end launch
+                promise.resolve(enrolResult)
+
+            } // end if
+
+        }// end function enrolTemplate
 
 
     }// end definition
