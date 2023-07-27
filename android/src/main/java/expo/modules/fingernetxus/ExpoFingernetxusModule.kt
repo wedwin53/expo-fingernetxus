@@ -275,10 +275,6 @@ class ExpoFingernetxusModule : Module() {
 
                     }
                 })
-
-                sendEvent("onFingerpringCaptured", mapOf(
-                    "image" to image
-                ))
                 //return@Function "Connected to device: $deviceName"
                 promise.resolve("Connected to device: $deviceName")
             }
