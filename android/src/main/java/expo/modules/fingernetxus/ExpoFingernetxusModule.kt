@@ -35,6 +35,7 @@ class ExpoFingernetxusModule : Module() {
     var mRefSize = 0
     var mMatData = ByteArray(512)
     var mMatSize = 0
+    private var worktype = 0
 
     private val bluetoothPermissions = arrayOf(
         Manifest.permission.BLUETOOTH,
@@ -226,10 +227,6 @@ class ExpoFingernetxusModule : Module() {
                         Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
 
-                        // Temporal for enrolment testing
-                        System.arraycopy(data!!, 0, mRefData,0, data.size)
-                        mRefSize = data.size;
-
                         sendEvent("onFingerpringCaptured", mapOf(
                             "image" to image
                         ))
@@ -250,10 +247,6 @@ class ExpoFingernetxusModule : Module() {
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
                         Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
-
-                        // Temporal for enrolment testing
-                        System.arraycopy(data!!, 0, mRefData,0, data.size)
-                        mRefSize = data.size;
 
                         sendEvent("onFingerpringCaptured", mapOf(
                             "image" to image
@@ -295,23 +288,21 @@ class ExpoFingernetxusModule : Module() {
                     AsyncBluetoothReader.OnEnrolTemplateListener {
 
                     override fun onEnrolTemplateSuccess(model: ByteArray?) {
-                        Log.i("ExpoFingernetxusModule", "Data: $model")
+                        Log.i("ExpoFingernetxusModule", "onEnrolTemplateSuccess Data: $model")
 
-                        val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
-                        Log.i("ExpoFingernetxusModule", "Base64 Enrol data: $base64Data")
-                        enrolResult = "data:image/png;base64,$base64Data"
+//                        val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
+//                        Log.i("ExpoFingernetxusModule", "Base64 Enrol data: $base64Data")
+//                        enrolResult = "data:image/png;base64,$base64Data"
 //                        Log.i("ExpoFingernetxusModule", "onEnrolTemplate data: $base64Data")
 //
 //                        sendEvent("onEnrolTemplate", mapOf(
 //                            "enrolResult" to base64Data
 //                        ))
-
-
                         System.arraycopy(model!!, 0, mRefData,0, model.size)
                         mRefSize = model.size;
                         Log.i("ExpoFingernetxusModule", "Enrol Template Success")
                         sendEvent("onEnrolTemplate", mapOf(
-                            "enrolResult" to enrolResult
+                            "enrolResult" to "Enrol Template Success"
                         ))
                     }
 
@@ -321,24 +312,41 @@ class ExpoFingernetxusModule : Module() {
                 })
 
                 // upEnrol Template
-//                asyncBluetoothReader!!.setOnUpTemplateListener(object :
-//                    AsyncBluetoothReader.OnUpTemplateListener {
-//
-//                    override fun onUpTemplateSuccess(data: ByteArray?) {
-//                        Log.i("ExpoFingernetxusModule", "Data: $data")
-//                        //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
-//                        val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
-//                        Log.i("ExpoFingernetxusModule", "onUpTemplate data: $base64Data")
-//
-//                        sendEvent("onUpTemplate", mapOf(
-//                            "upTemplate" to base64Data
-//                        ))
-//                    }
-//
-//                    override fun onUpTemplateFail() {
-//                        Log.e("ExpoFingernetxusModule", "Failed to Up Template")
-//                    }
-//                })
+                asyncBluetoothReader!!.setOnUpTemplateListener(object :
+                    AsyncBluetoothReader.OnUpTemplateListener {
+
+                    override fun onUpTemplateSuccess(model: ByteArray) {
+                        // make the Capture and math of the template
+                        if (worktype == 1) {
+                            System.arraycopy(model, 0, mMatData, 0, model.size)
+                            mMatSize = model.size
+
+                            if (mRefSize > 0) {
+                                val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
+                                Log.i("ExpoFingernetxusModule", "Score: $score")
+                                sendEvent("onCaptureTemplate", mapOf(
+                                    "captureScore" to score
+                                ))
+                            }
+                        } else { // aca hace el enrol
+                            System.arraycopy(model, 0, mRefData, 0, model.size)
+                            mRefSize = model.size
+                            Log.i("ExpoFingernetxusModule", "Enrol Template Success")
+                            sendEvent("onEnrolTemplate", mapOf(
+                                "enrolResult" to "Enrol Template Success"
+                            ))
+
+                        }
+                    }
+
+                    override fun onUpTemplateFail() {
+                        if (worktype == 1) {
+                            Log.e("ExpoFingernetxusModule", "Failed to capture template")
+                        } else {
+                            Log.e("ExpoFingernetxusModule", "Failed to Enrol")
+                        }
+                    }
+                }) // end setOnUpTemplateListener
 
 
                 //return@Function "Connected to device: $deviceName"
@@ -405,8 +413,9 @@ class ExpoFingernetxusModule : Module() {
                             template = "NO_CONNECTION"
                         }else {
                             // calls the function to get the image
-                            asyncBluetoothReader!!.CaptureTemplateNoImage()
-//                            asyncBluetoothReader!!.GetImageAndTemplate()
+//                            asyncBluetoothReader!!.CaptureTemplateNoImage()
+                            worktype = 1
+                            asyncBluetoothReader!!.GetImageAndTemplate()
                         }
 
                     }
