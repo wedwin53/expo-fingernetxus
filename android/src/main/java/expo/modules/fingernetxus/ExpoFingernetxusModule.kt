@@ -225,6 +225,11 @@ class ExpoFingernetxusModule : Module() {
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
                         Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
                         image = "data:image/png;base64,$base64Data"
+
+                        // Temporal for enrolment testing
+                        System.arraycopy(data!!, 0, mRefData,0, data.size)
+                        mRefSize = data.size;
+
                         sendEvent("onFingerpringCaptured", mapOf(
                             "image" to image
                         ))
@@ -288,7 +293,7 @@ class ExpoFingernetxusModule : Module() {
                         Log.i("ExpoFingernetxusModule", "Data: $model")
 
                         val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
-                        Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                        Log.i("ExpoFingernetxusModule", "Base64 Enrol data: $base64Data")
                         enrolResult = "data:image/png;base64,$base64Data"
 //                        Log.i("ExpoFingernetxusModule", "onEnrolTemplate data: $base64Data")
 //
@@ -395,8 +400,8 @@ class ExpoFingernetxusModule : Module() {
                             template = "NO_CONNECTION"
                         }else {
                             // calls the function to get the image
-//                            asyncBluetoothReader!!.CaptureTemplateNoImage()
-                            asyncBluetoothReader!!.GetImageAndTemplate()
+                            asyncBluetoothReader!!.CaptureTemplateNoImage()
+//                            asyncBluetoothReader!!.GetImageAndTemplate()
                         }
 
                     }
