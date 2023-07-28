@@ -266,6 +266,7 @@ class ExpoFingernetxusModule : Module() {
 
                         if (mRefSize > 0) {
                             val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
+                            Log.i("ExpoFingernetxusModule", "Score: $score")
                             sendEvent("onCaptureTemplate", mapOf(
                                 "captureResult" to score
                             ))
