@@ -270,7 +270,7 @@ class ExpoFingernetxusModule : Module() {
                             val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
                             Log.i("ExpoFingernetxusModule", "Score: $score")
                             sendEvent("onCaptureTemplate", mapOf(
-                                "captureResult" to score
+                                "captureScore" to score
                             ))
                         }
                     }
@@ -286,19 +286,22 @@ class ExpoFingernetxusModule : Module() {
 
                     override fun onEnrolTemplateSuccess(model: ByteArray?) {
                         Log.i("ExpoFingernetxusModule", "Data: $model")
-                        //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
-//                        val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
+
+                        val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
+                        Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                        enrolResult = "data:image/png;base64,$base64Data"
 //                        Log.i("ExpoFingernetxusModule", "onEnrolTemplate data: $base64Data")
 //
 //                        sendEvent("onEnrolTemplate", mapOf(
 //                            "enrolResult" to base64Data
 //                        ))
 
+
                         System.arraycopy(model!!, 0, mRefData,0, model.size)
                         mRefSize = model.size;
                         Log.i("ExpoFingernetxusModule", "Enrol Template Success")
                         sendEvent("onEnrolTemplate", mapOf(
-                            "enrolResult" to "Enrol Template Success"
+                            "enrolResult" to enrolResult
                         ))
                     }
 
@@ -392,7 +395,8 @@ class ExpoFingernetxusModule : Module() {
                             template = "NO_CONNECTION"
                         }else {
                             // calls the function to get the image
-                            asyncBluetoothReader!!.CaptureTemplateNoImage()
+//                            asyncBluetoothReader!!.CaptureTemplateNoImage()
+                            asyncBluetoothReader!!.GetImageAndTemplate()
                         }
 
                     }
@@ -442,7 +446,8 @@ class ExpoFingernetxusModule : Module() {
                             enrolResult = "NO_CONNECTION"
                         }else {
                             // calls the function to enrol template
-                            asyncBluetoothReader!!.EnrolTempatelNoImage()
+//                            asyncBluetoothReader!!.EnrolTempatelNoImage()
+                            asyncBluetoothReader!!.GetImageAndTemplate()
                         }
 
                     }

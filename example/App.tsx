@@ -65,8 +65,8 @@ export default function App() {
 
   useEffect(() => {
     const sub = ExpoFingernetxus.addFingerprintCaptureTemplateListener((event: any) => {
-      console.log({captureResult: event});
-      setTemplate(event?.captureResult);
+      console.log({captureScore: event});
+      setTemplate(event?.captureScore);
     });
     return () => {
       sub.remove();
