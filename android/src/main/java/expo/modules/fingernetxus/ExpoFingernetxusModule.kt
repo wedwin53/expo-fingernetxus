@@ -220,10 +220,10 @@ class ExpoFingernetxusModule : Module() {
                     AsyncBluetoothReader.OnGetStdImageListener {
 
                     override fun onGetStdImageSuccess(data: ByteArray?) {
-                        Log.i("ExpoFingernetxusModule", "Data: $data")
+                        Log.i("ExpoFingernetxusModule", "onGetStdImageSuccess Data: $data")
                         //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
-                        Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                        Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
 
                         // Temporal for enrolment testing
@@ -245,11 +245,16 @@ class ExpoFingernetxusModule : Module() {
                     AsyncBluetoothReader.OnGetResImageListener {
 
                     override fun onGetResImageSuccess(data: ByteArray?) {
-                        Log.i("ExpoFingernetxusModule", "Data: $data")
+                        Log.i("ExpoFingernetxusModule", "setOnGetResImageListener Data: $data")
                         //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
-                        Log.i("ExpoFingernetxusModule", "Base64 data: $base64Data")
+                        Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
+
+                        // Temporal for enrolment testing
+                        System.arraycopy(data!!, 0, mRefData,0, data.size)
+                        mRefSize = data.size;
+
                         sendEvent("onFingerpringCaptured", mapOf(
                             "image" to image
                         ))
