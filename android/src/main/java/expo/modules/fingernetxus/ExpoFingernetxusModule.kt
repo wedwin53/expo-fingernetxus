@@ -264,6 +264,8 @@ class ExpoFingernetxusModule : Module() {
                         System.arraycopy(model, 0, mMatData, 0, model.size)
                         mMatSize = model.size
 
+                        Log.i("ExpoFingernetxusModule", "mMatSize: $mMatSize and mRefSize: $mRefSize")
+
                         if (mRefSize > 0) {
                             val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
                             Log.i("ExpoFingernetxusModule", "Score: $score")
@@ -434,7 +436,7 @@ class ExpoFingernetxusModule : Module() {
                         "Bluetooth reader is connected: ${asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED}"
                     )
                     if (asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED) {
-                        Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected")
+                        Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected and ready to enrol")
                         // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
                         if (asyncBluetoothReader == null) {
                             enrolResult = "NO_CONNECTION"
