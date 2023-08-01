@@ -290,14 +290,6 @@ class ExpoFingernetxusModule : Module() {
                     override fun onEnrolTemplateSuccess(model: ByteArray?) {
                         Log.i("ExpoFingernetxusModule", "onEnrolTemplateSuccess Data: $model")
 
-//                        val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
-//                        Log.i("ExpoFingernetxusModule", "Base64 Enrol data: $base64Data")
-//                        enrolResult = "data:image/png;base64,$base64Data"
-//                        Log.i("ExpoFingernetxusModule", "onEnrolTemplate data: $base64Data")
-//
-//                        sendEvent("onEnrolTemplate", mapOf(
-//                            "enrolResult" to base64Data
-//                        ))
                         System.arraycopy(model!!, 0, mRefData,0, model.size)
                         mRefSize = model.size;
                         Log.i("ExpoFingernetxusModule", "Enrol Template Success")
@@ -308,6 +300,9 @@ class ExpoFingernetxusModule : Module() {
 
                     override fun onEnrolTemplateFail() {
                         Log.e("ExpoFingernetxusModule", "Failed to Enrol")
+                        sendEvent("onEnrolTemplate", mapOf(
+                            "enrolResult" to "Failed to Enrol"
+                        ))
                     }
                 })
 
@@ -383,9 +378,6 @@ class ExpoFingernetxusModule : Module() {
 
                 } // end launch
 
-//                sendEvent("onFingerpringCaptured", mapOf(
-//                    "image" to image
-//                ))
                 promise.resolve(image)
 
             } // end if
@@ -466,6 +458,7 @@ class ExpoFingernetxusModule : Module() {
                         }else {
                             // calls the function to enrol template
 //                            asyncBluetoothReader!!.EnrolTempatelNoImage()
+                            worktype = 0
                             asyncBluetoothReader!!.GetImageAndTemplate()
                         }
 
