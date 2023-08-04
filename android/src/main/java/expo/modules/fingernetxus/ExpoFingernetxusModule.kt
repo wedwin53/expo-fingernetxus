@@ -323,7 +323,22 @@ class ExpoFingernetxusModule : Module() {
                                     "captureScore" to score
                                 ))
                             }
-                        } else { // aca hace el enrol
+                        }
+                        else if (worktype == 2){
+                            mMatData = ByteArray(model.size)
+                            System.arraycopy(model, 0, mMatData, 0, model.size)
+                            mMatSize = model.size
+
+                            if (mRefSize > 0) {
+                                val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
+                                Log.i("ExpoFingernetxusModule", "Score: $score")
+                                sendEvent("onCaptureTemplate", mapOf(
+                                    "captureScore" to score
+                                ))
+                            }
+                        }
+
+                        else { // aca hace el enrol
                             System.arraycopy(model, 0, mRefData, 0, model.size)
                             mRefSize = model.size
                             Log.i("ExpoFingernetxusModule", "Enrol Template Success")
@@ -471,6 +486,71 @@ class ExpoFingernetxusModule : Module() {
             } // end if
 
         }// end function enrolTemplate
+
+        // experimental math template with params
+        AsyncFunction("enrolOnDemand") { template: String, promise: Promise ->
+
+            val activity = appContext.activityProvider?.currentActivity
+            val applicationContext = activity?.applicationContext
+            if (applicationContext != null) {
+            //                scope.launch {
+            //
+            //
+            //                } // end launch
+                Log.i("ExpoFingernetxusModule", "Inside enrolOnDemand")
+                // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
+
+                if (template != null) {
+                    // take the template and convert it to byte array
+                    val templateByteArray = template.toByteArray()
+                    mRefData = ByteArray(templateByteArray.size)
+
+                    System.arraycopy(templateByteArray, 0, mRefData,0, templateByteArray.size)
+                    mRefSize = templateByteArray.size;
+                    enrolResult = "OK"
+                }
+
+                promise.resolve(enrolResult)
+
+            } // end if
+
+        }// end function enrolOnDemand
+
+        AsyncFunction("captureOnDemandTemplate") { promise: Promise ->
+
+            val activity = appContext.activityProvider?.currentActivity
+            val applicationContext = activity?.applicationContext
+            if (applicationContext != null) {
+                scope.launch {
+                    Log.i(
+                        "ExpoFingernetxusModule",
+                        "Bluetooth reader state: ${asyncBluetoothReader?.bluetoothReader?.getState()}"
+                    )
+                    Log.i(
+                        "ExpoFingernetxusModule",
+                        "Bluetooth reader is connected: ${asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED}"
+                    )
+                    if (asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED) {
+                        Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected")
+                        // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
+                        if (asyncBluetoothReader == null) {
+                            template = "NO_CONNECTION"
+                        }else {
+                            // calls the function to get the image
+//                            asyncBluetoothReader!!.CaptureTemplateNoImage()
+                            worktype = 2
+                            asyncBluetoothReader!!.GetImageAndTemplate()
+                        }
+
+                    }
+                    Log.i("ExpoFingernetxusModule", "Inside captureOnDemandTemplate")
+
+                } // end launch
+                promise.resolve(template)
+
+            } // end if
+
+        }// end function captureOnDemandTemplate
 
 
     }// end definition

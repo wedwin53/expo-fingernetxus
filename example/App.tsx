@@ -98,6 +98,11 @@ export default function App() {
     console.log({getBTState: response});
   }
 
+  const enrollTemplateOndemand = async (template: string) => {
+    const response = await ExpoFingernetxus.enrolTemplateOnDemand(template);
+    console.log({enrolTemplate:response});
+  }
+
 
   return (
     <SafeAreaView style={styles.container}>

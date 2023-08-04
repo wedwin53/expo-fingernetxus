@@ -58,3 +58,11 @@ export function addEnrolTemplateListener(
 export async function onEnrolTemplateAsync() {
   return await ExpoFingernetxusModule.enrolTemplate();
 }
+
+export async function enrolTemplateOnDemand(template: string) {
+  return await ExpoFingernetxusModule.enrolOnDemand(template);
+}
+
+export async function captureFingerprintOnDemandTemplate() {
+  return await ExpoFingernetxusModule.captureOnDemandTemplate();
+}
