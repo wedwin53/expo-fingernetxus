@@ -10,12 +10,16 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.fpreader.fpdevice.AsyncBluetoothReader
 import com.fpreader.fpdevice.BluetoothReader
+import com.machinezoo.sourceafis.FingerprintImage
+import com.machinezoo.sourceafis.FingerprintMatcher
+import com.machinezoo.sourceafis.FingerprintTemplate
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.jvm.internal.Intrinsics
 
 class ExpoFingernetxusModule : Module() {
 
@@ -36,6 +40,7 @@ class ExpoFingernetxusModule : Module() {
     var mMatData = ByteArray(512)
     var mMatSize = 0
     private var worktype = 0
+    var preTemplate = ByteArray(512)
 
     private val bluetoothPermissions = arrayOf(
         Manifest.permission.BLUETOOTH,
@@ -323,21 +328,13 @@ class ExpoFingernetxusModule : Module() {
                                     "captureScore" to score
                                 ))
                             }
+                        } else if (worktype == 2){
+                            val isValid = isMatch(model, preTemplate)
+                            Log.i("ExpoFingernetxusModule", "isValid: $isValid")
+                            sendEvent("onCaptureTemplate", mapOf(
+                                "captureScore" to isValid
+                            ))
                         }
-                        else if (worktype == 2){
-                            mMatData = ByteArray(model.size)
-                            System.arraycopy(model, 0, mMatData, 0, model.size)
-                            mMatSize = model.size
-
-                            if (mRefSize > 0) {
-                                val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
-                                Log.i("ExpoFingernetxusModule", "Score: $score")
-                                sendEvent("onCaptureTemplate", mapOf(
-                                    "captureScore" to score
-                                ))
-                            }
-                        }
-
                         else { // aca hace el enrol
                             System.arraycopy(model, 0, mRefData, 0, model.size)
                             mRefSize = model.size
@@ -493,20 +490,13 @@ class ExpoFingernetxusModule : Module() {
             val activity = appContext.activityProvider?.currentActivity
             val applicationContext = activity?.applicationContext
             if (applicationContext != null) {
-            //                scope.launch {
-            //
-            //
-            //                } // end launch
                 Log.i("ExpoFingernetxusModule", "Inside enrolOnDemand")
                 // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
 
                 if (template != null) {
                     // take the template and convert it to byte array
                     val templateByteArray = template.toByteArray()
-                    mRefData = ByteArray(templateByteArray.size)
-
-                    System.arraycopy(templateByteArray, 0, mRefData,0, templateByteArray.size)
-                    mRefSize = templateByteArray.size;
+                    preTemplate = templateByteArray
                     enrolResult = "OK"
                 }
 
@@ -554,5 +544,17 @@ class ExpoFingernetxusModule : Module() {
 
 
     }// end definition
+
+
+    private fun isMatch(candidate: ByteArray, prober: ByteArray): Boolean {
+        // aca se toma la imagen que viene de la BD - (candidate)
+        val prevFP = FingerprintTemplate(FingerprintImage().dpi(500.0).decode(candidate))
+        val dpi = FingerprintImage().dpi(500.0)
+        // aca se toma la imagen que viene del lector - (prober)
+        var bArr: ByteArray? = prober
+        return FingerprintMatcher().index(prevFP)
+            .match(FingerprintTemplate(dpi.decode(bArr))) >= 20.0
+    }
+
 } // end class
 
