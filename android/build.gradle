@@ -91,5 +91,5 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
   implementation fileTree(dir: 'libs', include: ['*.jar'])
   implementation files('libs/fplib-reader-v3.jar')
-  implementation 'com.machinezoo.sourceafis:sourceafis:3.17.1'
+  implementation 'com.machinezoo.sourceafis:sourceafis:3.13.0'
 }

@@ -19,7 +19,6 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.jvm.internal.Intrinsics
 
 class ExpoFingernetxusModule : Module() {
 
@@ -58,18 +57,11 @@ class ExpoFingernetxusModule : Module() {
     )
 
 
-    // Each module class must implement the definition function. The definition consists of components
-    // that describes the module's functionality and behavior.
-    // See https://docs.expo.dev/modules/module-api for more details about available components.
     override fun definition() = ModuleDefinition {
-        // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-        // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-        // The module will be accessible from `requireNativeModule('ExpoFingernetxus')` in JavaScript.
+
         Name("ExpoFingernetxus")
 
         Events("onFingerpringCaptured", "onCaptureTemplate", "onEnrolTemplate")
-
-        //Events("onCaptureTemplate")
 
         // If bluetooth is not active on the device, this function will request to turn it on
         Function("requestBluetoothAsync") {
@@ -329,7 +321,12 @@ class ExpoFingernetxusModule : Module() {
                                 ))
                             }
                         } else if (worktype == 2){
-                            val isValid = isMatch(model, preTemplate)
+                            Log.i("ExpoFingernetxusModule", "Model Object (incoming): $model")
+                            val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
+                            Log.i("ExpoFingernetxusModule", "Base64 of Incomming: $base64Data")
+
+                            val incommingTemplate = getBytesFromBase64(base64Data)
+                            val isValid = isMatch(preTemplate, incommingTemplate!!)
                             Log.i("ExpoFingernetxusModule", "isValid: $isValid")
                             sendEvent("onCaptureTemplate", mapOf(
                                 "captureScore" to isValid
@@ -495,8 +492,8 @@ class ExpoFingernetxusModule : Module() {
 
                 if (template != null) {
                     // take the template and convert it to byte array
-                    val templateByteArray = template.toByteArray()
-                    preTemplate = templateByteArray
+                    var bytesFromBase64 = getBytesFromBase64(template)
+                    preTemplate = bytesFromBase64!!
                     enrolResult = "OK"
                 }
 
@@ -546,14 +543,21 @@ class ExpoFingernetxusModule : Module() {
     }// end definition
 
 
-    private fun isMatch(candidate: ByteArray, prober: ByteArray): Boolean {
-        // aca se toma la imagen que viene de la BD - (candidate)
-        val prevFP = FingerprintTemplate(FingerprintImage().dpi(500.0).decode(candidate))
-        val dpi = FingerprintImage().dpi(500.0)
-        // aca se toma la imagen que viene del lector - (prober)
-        var bArr: ByteArray? = prober
-        return FingerprintMatcher().index(prevFP)
-            .match(FingerprintTemplate(dpi.decode(bArr))) >= 20.0
+    fun isMatch(existingFingerprint: ByteArray, toEvaluateFingerprint: ByteArray): Boolean {
+
+        val incommingFP = FingerprintTemplate(toEvaluateFingerprint).dpi(500.0)
+        val existingFP = FingerprintTemplate(FingerprintImage(existingFingerprint).dpi(500.0))
+
+        val matcher = FingerprintMatcher(incommingFP)
+        val similarity = matcher.match(existingFP)
+
+        val threshold = 20.0
+        return similarity >= threshold
+
+    }
+
+    fun getBytesFromBase64(data: String?): ByteArray? {
+        return Base64.decode(data, 0)
     }
 
 } // end class
