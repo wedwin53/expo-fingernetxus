@@ -61,7 +61,7 @@ class ExpoFingernetxusModule : Module() {
 
         Name("ExpoFingernetxus")
 
-        Events("onFingerpringCaptured", "onCaptureTemplate", "onEnrolTemplate")
+        Events("onFingerpringCaptured", "onCaptureTemplate", "onEnrolTemplate", "onCaptureVerification")
 
         // If bluetooth is not active on the device, this function will request to turn it on
         Function("requestBluetoothAsync") {
@@ -328,7 +328,7 @@ class ExpoFingernetxusModule : Module() {
                             val incommingTemplate = getBytesFromBase64(base64Data)
                             val isValid = isMatch(preTemplate, incommingTemplate!!)
                             Log.i("ExpoFingernetxusModule", "isValid: $isValid")
-                            sendEvent("onCaptureTemplate", mapOf(
+                            sendEvent("onCaptureVerification", mapOf(
                                 "captureScore" to isValid
                             ))
                         }

@@ -66,3 +66,9 @@ export async function enrolTemplateOnDemand(template: string) {
 export async function captureFingerprintOnDemandTemplate() {
   return await ExpoFingernetxusModule.captureOnDemandTemplate();
 }
+
+export function addCaptureVerificationListener(
+  listener: (event: any) => void
+): Subscription { 
+  return emitter.addListener('onCaptureVerification', listener);
+}
