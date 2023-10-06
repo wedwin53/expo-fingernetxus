@@ -17,6 +17,7 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -61,63 +62,101 @@ class ExpoFingernetxusModule : Module() {
 
         Name("ExpoFingernetxus")
 
-        Events("onFingerpringCaptured", "onCaptureTemplate", "onEnrolTemplate", "onCaptureVerification")
+        Events("onFingerpringCaptured", "onCaptureTemplate", "onEnrolTemplate", "onCaptureVerification", "onBluetoothStateOn", "onBluetoothStateOff")
 
         // If bluetooth is not active on the device, this function will request to turn it on
         Function("requestBluetoothAsync") {
-            val activity = appContext.activityProvider?.currentActivity
-            val applicationContext = activity?.applicationContext
-            if (applicationContext != null) {
-                Log.i("ExpoFingernetxusModule", "Requesting bluetooth")
-                val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-                if (bluetoothAdapter == null) {
-                    Log.i("ExpoFingernetxusModule", "No bluetooth adapter found")
-                } else {
-                    if (!bluetoothAdapter.isEnabled) {
-                        Log.i("ExpoFingernetxusModule", "Bluetooth is not enabled")
-                        // checking permissions
-                        val permissionCheck = ContextCompat.checkSelfPermission(
-                            applicationContext,
-                            Manifest.permission.BLUETOOTH
+            scope.launch(Dispatchers.IO) {
+
+                val activity = appContext.activityProvider?.currentActivity
+                val applicationContext = activity?.applicationContext
+                if (applicationContext != null) {
+                    Log.i("ExpoFingernetxusModule", "Requesting bluetooth")
+                    currentAdapter = BluetoothAdapter.getDefaultAdapter()
+//                if (bluetoothAdapter == null) {
+//                    Log.i("ExpoFingernetxusModule", "No bluetooth adapter found")
+//                } else {
+//                    if (!bluetoothAdapter.isEnabled) {
+//                        Log.i("ExpoFingernetxusModule", "Bluetooth is not enabled")
+//                        // checking permissions
+//                        val permissionCheck = ContextCompat.checkSelfPermission(
+//                            applicationContext,
+//                            Manifest.permission.BLUETOOTH
+//                        )
+//
+//                        val permissionCheckSDKHightLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                            ContextCompat.checkSelfPermission(
+//                                applicationContext,
+//                                Manifest.permission.BLUETOOTH_CONNECT
+//                            )
+//                        } else {
+//                            ContextCompat.checkSelfPermission(
+//                                applicationContext,
+//                                Manifest.permission.BLUETOOTH
+//                            )
+//                        }
+//
+//                        if (permissionCheck != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+//                            // Permission for Android 11 and below
+//                            ActivityCompat.requestPermissions(
+//                                activity,
+//                                bluetoothPermissions,
+//                                1
+//                            )
+//                        } else if(permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+//                            // Permission for Android 12 and above
+//                            ActivityCompat.requestPermissions(
+//                                activity,
+//                                btPermissionsHighLevelSDK,
+//                                1
+//                            )
+//                        } else {
+//                            Log.i("ExpoFingernetxusModule", "Bluetooth permissions already granted")
+//                            permissionGranted = true
+//                        }
+//
+//                        bluetoothAdapter.enable()
+//                    } else {
+//                        Log.i("ExpoFingernetxusModule", "Bluetooth is already enabled")
+//                    }
+//                }
+
+                    val permissionCheck = ContextCompat.checkSelfPermission(
+                        applicationContext,
+                        Manifest.permission.BLUETOOTH
+                    )
+
+                    val permissionCheckSDKHightLevel = ContextCompat.checkSelfPermission(
+                        applicationContext,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    )
+
+                    Log.i("ExpoFingernetxusModule", "Permission check: $permissionCheck")
+                    if (permissionCheck != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                        // Permission for Android 11 and below
+                        ActivityCompat.requestPermissions(
+                            activity,
+                            bluetoothPermissions,
+                            1
                         )
-
-                        val permissionCheckSDKHightLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            ContextCompat.checkSelfPermission(
-                                applicationContext,
-                                Manifest.permission.BLUETOOTH_CONNECT
-                            )
-                        } else {
-                            ContextCompat.checkSelfPermission(
-                                applicationContext,
-                                Manifest.permission.BLUETOOTH
-                            )
-                        }
-
-                        if (permissionCheck != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                            // Permission for Android 11 and below
-                            ActivityCompat.requestPermissions(
-                                activity,
-                                bluetoothPermissions,
-                                1
-                            )
-                        } else if(permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-                            // Permission for Android 12 and above
-                            ActivityCompat.requestPermissions(
-                                activity,
-                                btPermissionsHighLevelSDK,
-                                1
-                            )
-                        } else {
-                            Log.i("ExpoFingernetxusModule", "Bluetooth permissions already granted")
-                            permissionGranted = true
-                        }
-
-                        bluetoothAdapter.enable()
+                    } else if(permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+                        // Permission for Android 12 and above
+                        ActivityCompat.requestPermissions(
+                            activity,
+                            btPermissionsHighLevelSDK,
+                            1
+                        )
                     } else {
-                        Log.i("ExpoFingernetxusModule", "Bluetooth is already enabled")
+                        Log.i("ExpoFingernetxusModule", "Bluetooth permissions already granted")
+                        permissionGranted = true
+                        if(currentAdapter != null && !currentAdapter!!.isEnabled){
+                            currentAdapter?.enable()
+                        }
+
                     }
                 }
             }
+
         }
 
         // Function to request bluetooth permissions
@@ -353,8 +392,34 @@ class ExpoFingernetxusModule : Module() {
                 }) // end setOnUpTemplateListener
 
 
+                // onBluetoothStateListener
+                asyncBluetoothReader!!.setOnBluetoothStateListener(object :
+                    AsyncBluetoothReader.OnBluetoothStateListener {
+                    override fun onBluetoothStateChange(p0: Int) {
+                        Log.d("ExpoFingernetxusModule", "onBluetoothStateChange: $p0")
+                        if (p0 == BluetoothReader.STATE_CONNECTED) {
+                            sendEvent("onBluetoothStateOn", mapOf(
+                                "bluetoothState" to "on"
+                            ))
+                        }
+                    }
+
+                    override fun onBluetoothStateDevice(p0: String?) {
+                        Log.d("ExpoFingernetxusModule", "onBluetoothStateDevice: $p0")
+                    }
+
+                    override fun onBluetoothStateLost(p0: Int) {
+                        Log.d("ExpoFingernetxusModule", "onBluetoothStateLost: $p0")
+                        sendEvent("onBluetoothStateOn", mapOf(
+                            "bluetoothState" to "off"
+                        ))
+                    }
+
+
+                })
+
                 //return@Function "Connected to device: $deviceName"
-                promise.resolve("Connected to device: $deviceName")
+                promise.resolve("status: ${asyncBluetoothReader?.bluetoothReader?.getState()}")
             }
         }// end function connectToDeviceAsync
 
@@ -539,6 +604,22 @@ class ExpoFingernetxusModule : Module() {
 
         }// end function captureOnDemandTemplate
 
+        // get bluetooth state
+        Function("getBluetoothState") {
+            val activity = appContext.activityProvider?.currentActivity
+            val applicationContext = activity?.applicationContext
+            var isBTEnabled = false
+            if (applicationContext != null) {
+                Log.i("ExpoFingernetxusModule", "getting bluetooth state")
+
+                isBTEnabled = currentAdapter?.isEnabled!!
+                Log.i("ExpoFingernetxusModule", "Bluetooth state: $isBTEnabled")
+                return@Function isBTEnabled
+            }else{
+                Log.i("ExpoFingernetxusModule", "applicationContext is null")
+                return@Function isBTEnabled
+            }
+        } // End getBlueThoothConnectionState
 
     }// end definition
 

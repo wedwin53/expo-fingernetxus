@@ -72,3 +72,11 @@ export function addCaptureVerificationListener(
 ): Subscription { 
   return emitter.addListener('onCaptureVerification', listener);
 }
+
+export function addBluetoothStateChangeListener(listener: (event: any) => void) {
+  return emitter.addListener('onBluetoothStateOn', listener);
+}
+
+export function getHostBluetoothState() {
+  return ExpoFingernetxusModule.getBluetoothState();
+}

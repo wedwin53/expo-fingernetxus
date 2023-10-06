@@ -53,8 +53,15 @@ export default function App() {
       console.log({event});
       setBase64Image(event?.image);
     });
+
+    const subBTState = ExpoFingernetxus.addBluetoothStateChangeListener((event: any) => {
+      console.log({event});
+    });
+
+
     return () => {
       sub.remove();
+      subBTState.remove();
     }
   }, [])
 
@@ -103,10 +110,23 @@ export default function App() {
     console.log({enrolTemplate:response});
   }
 
+  const handleBluetoothOn = () => {
+    const response = ExpoFingernetxus.requestTurnOnBluetooth();
+    console.log({response});
+  }
+
+  const handleHostBTState = () => {
+    const response = ExpoFingernetxus.getHostBluetoothState();
+    console.log({response});
+  }
+
 
   return (
     <SafeAreaView style={styles.container}>
       <Text>Permission Status: {result}</Text>
+      <View style={styles.viewContainer}>
+
+      
       <TouchableOpacity onPress={requestBluetoothPermissionRN} 
       style={styles.button}
       >
@@ -116,7 +136,7 @@ export default function App() {
       <TouchableOpacity onPress={getBTState} 
       style={styles.button}
       >
-        <Text style={styles.buttonText} >Get Bluetooth State</Text>
+        <Text style={styles.buttonText} >Get Device Connection</Text>
       </TouchableOpacity>
 
       {result && <TouchableOpacity onPress={captureFingerprint}
@@ -136,7 +156,22 @@ export default function App() {
       > 
         <Text style={styles.buttonText} >Enrol Template</Text>
       </TouchableOpacity>}
+      {/* Turn on the BT */}
+      <TouchableOpacity onPress={handleBluetoothOn}
+      style={styles.button}
+      > 
+        <Text style={styles.buttonText} >Turn ON BT</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={handleHostBTState}
+      style={styles.button}
+      > 
+        <Text style={styles.buttonText} >Get BT State</Text>
+      </TouchableOpacity>
+
+      </View>
       
+      <View style={styles.imagesContainer}>
 
       <View style={{height: 100, width: 100, backgroundColor: 'ligthgray'}}>
         <Text>Image</Text>
@@ -146,25 +181,27 @@ export default function App() {
 
         }
       </View>
-      {/* Template */}
-      <View style={{height: 100, width: 200, backgroundColor: 'ligthgray'}}>
+      
+      </View>
+        {/* enrolment result */}
+      <View style={{height: 50, width: 200, backgroundColor: 'ligthgray', marginBottom:30}}>
+        <Text>Enrolment Result</Text>
+        {
+          enrolResult &&
+        <Text>{enrolResult}</Text>
+        }
         <Text>Template</Text>
         {
           template &&
         <Text>{template}</Text>
         }
       </View>
-      {/* enrolment result */}
-      <View style={{height: 100, width: 200, backgroundColor: 'ligthgray'}}>
-        <Text>Enrolment Result</Text>
-        {
-          enrolResult &&
-        <Text>{enrolResult}</Text>
-        }
-      </View>
+      
+      
       <Text>Devices Found:</Text>
       
       <FlatList
+      style={{width: '80%'}}
         data={devicesList}
         renderItem={({ item }) => <DeviceCard name={item} handleConnect={connectToDevice} />} 
       />
@@ -193,6 +230,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'blue',
     padding: 20,
     borderRadius: 10,
+    width: '40%',
+    margin: 5
   },
   buttonText: {
     color: 'white',
@@ -203,5 +242,19 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     margin: 5
+  },
+  viewContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    width: '100%',
+    padding: 20
+  },
+  imagesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    padding: 20
   }
+
 });
