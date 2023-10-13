@@ -355,8 +355,10 @@ class ExpoFingernetxusModule : Module() {
                             if (mRefSize > 0) {
                                 val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
                                 Log.i("ExpoFingernetxusModule", "Score: $score")
+                                val base64Template = Base64.encodeToString(model, Base64.DEFAULT)
                                 sendEvent("onCaptureTemplate", mapOf(
-                                    "captureScore" to score
+                                    "captureScore" to score,
+                                    "template" to base64Template
                                 ))
                             }
                         } else if (worktype == 2){
