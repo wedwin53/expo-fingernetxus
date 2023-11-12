@@ -1,6 +1,6 @@
 # expo-fingernetxus
 
-Fingerprint reader sdk integration
+Fingerprint reader sdk integration for Expo React Native
 
 # API documentation
 
@@ -21,9 +21,10 @@ For bare React Native projects, you must ensure that you have [installed and con
 npm install expo-fingernetxus
 ```
 
-### Configure for iOS
+### Device Specification
 
-Run `npx pod-install` after installing the npm package.
+Bluetooth Fingerprint and Card Reader Fr3000
+
 
 
 ### Configure for Android
