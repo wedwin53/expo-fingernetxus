@@ -628,15 +628,25 @@ class ExpoFingernetxusModule : Module() {
 
     fun isMatch(existingFingerprint: ByteArray, toEvaluateFingerprint: ByteArray): Boolean {
 
-        val incommingFP = FingerprintTemplate(toEvaluateFingerprint).dpi(500.0)
-        val existingFP = FingerprintTemplate(FingerprintImage(existingFingerprint).dpi(500.0))
+        try {
+            val incommingFP = FingerprintTemplate(toEvaluateFingerprint).dpi(500.0)
+                val existingFP = FingerprintTemplate(FingerprintImage(existingFingerprint).dpi(500.0))
 
-        val matcher = FingerprintMatcher(incommingFP)
-        val similarity = matcher.match(existingFP)
+                val matcher = FingerprintMatcher(incommingFP)
+                val similarity = matcher.match(existingFP)
 
-        val threshold = 20.0
-        return similarity >= threshold
+                val threshold = 20.0
+                return similarity >= threshold
 
+        } catch (e: IllegalArgumentException) {
+            Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
+            return false
+        } catch (e: Exception) {
+            // Maneja cualquier otra excepción no anticipada
+            // Nuevamente, considera registrar este error
+            Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
+            return false
+        }
     }
 
     fun getBytesFromBase64(data: String?): ByteArray? {
