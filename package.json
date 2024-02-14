@@ -1,6 +1,6 @@
 {
   "name": "expo-fingernetxus",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "description": "Fingerprint reader sdk integration",
   "main": "build/index.js",
   "types": "build/index.d.ts",
