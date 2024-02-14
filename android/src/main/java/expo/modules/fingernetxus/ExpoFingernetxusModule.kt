@@ -17,7 +17,6 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -73,53 +72,6 @@ class ExpoFingernetxusModule : Module() {
                 if (applicationContext != null) {
                     Log.i("ExpoFingernetxusModule", "Requesting bluetooth")
                     currentAdapter = BluetoothAdapter.getDefaultAdapter()
-//                if (bluetoothAdapter == null) {
-//                    Log.i("ExpoFingernetxusModule", "No bluetooth adapter found")
-//                } else {
-//                    if (!bluetoothAdapter.isEnabled) {
-//                        Log.i("ExpoFingernetxusModule", "Bluetooth is not enabled")
-//                        // checking permissions
-//                        val permissionCheck = ContextCompat.checkSelfPermission(
-//                            applicationContext,
-//                            Manifest.permission.BLUETOOTH
-//                        )
-//
-//                        val permissionCheckSDKHightLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                            ContextCompat.checkSelfPermission(
-//                                applicationContext,
-//                                Manifest.permission.BLUETOOTH_CONNECT
-//                            )
-//                        } else {
-//                            ContextCompat.checkSelfPermission(
-//                                applicationContext,
-//                                Manifest.permission.BLUETOOTH
-//                            )
-//                        }
-//
-//                        if (permissionCheck != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-//                            // Permission for Android 11 and below
-//                            ActivityCompat.requestPermissions(
-//                                activity,
-//                                bluetoothPermissions,
-//                                1
-//                            )
-//                        } else if(permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-//                            // Permission for Android 12 and above
-//                            ActivityCompat.requestPermissions(
-//                                activity,
-//                                btPermissionsHighLevelSDK,
-//                                1
-//                            )
-//                        } else {
-//                            Log.i("ExpoFingernetxusModule", "Bluetooth permissions already granted")
-//                            permissionGranted = true
-//                        }
-//
-//                        bluetoothAdapter.enable()
-//                    } else {
-//                        Log.i("ExpoFingernetxusModule", "Bluetooth is already enabled")
-//                    }
-//                }
 
                     val permissionCheck = ContextCompat.checkSelfPermission(
                         applicationContext,
@@ -367,7 +319,7 @@ class ExpoFingernetxusModule : Module() {
                             Log.i("ExpoFingernetxusModule", "Base64 of Incomming: $base64Data")
 
                             val incommingTemplate = getBytesFromBase64(base64Data)
-                            val isValid = isMatch(preTemplate, incommingTemplate!!)
+                            val isValid = isMatchLegacy(preTemplate, incommingTemplate!!)
                             Log.i("ExpoFingernetxusModule", "isValid: $isValid")
                             sendEvent("onCaptureVerification", mapOf(
                                 "captureScore" to isValid
@@ -646,6 +598,19 @@ class ExpoFingernetxusModule : Module() {
             // Nuevamente, considera registrar este error
             Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
             return false
+        }
+    }
+
+    private fun isMatchLegacy(existingFingerprint: ByteArray, toEvaluateFingerprint: ByteArray): Boolean {
+        return try {
+            FingerprintMatcher().index(
+                FingerprintTemplate(
+                    FingerprintImage().dpi(500.0).decode(existingFingerprint)
+                )
+            ).match(FingerprintTemplate(FingerprintImage().dpi(500.0).decode(toEvaluateFingerprint))) >= 20.0
+        } catch (e: Exception) {
+            Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
+            false
         }
     }
 
