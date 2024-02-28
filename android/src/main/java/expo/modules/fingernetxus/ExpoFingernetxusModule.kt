@@ -315,14 +315,18 @@ class ExpoFingernetxusModule : Module() {
                             }
                         } else if (worktype == 2){
                             Log.i("ExpoFingernetxusModule", "Model Object (incoming): $model")
-                            val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
-                            Log.i("ExpoFingernetxusModule", "Base64 of Incomming: $base64Data")
+//                            val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
+//                            Log.i("ExpoFingernetxusModule", "Base64 of Incomming: $base64Data")
 
-                            val incommingTemplate = getBytesFromBase64(base64Data)
-                            val isValid = isMatchLegacy(preTemplate, incommingTemplate!!)
+//                            val incommingTemplate = getBytesFromBase64(base64Data)
+                            val isValidLegacy = isMatchLegacy(preTemplate, model)
+                            val isValid = isMatch(preTemplate, model)
+                            val isValidFingerprint = isValid || isValidLegacy
+
                             Log.i("ExpoFingernetxusModule", "isValid: $isValid")
+                            Log.i("ExpoFingernetxusModule", "isValidTry2: $isValidLegacy")
                             sendEvent("onCaptureVerification", mapOf(
-                                "captureScore" to isValid
+                                "captureScore" to isValidFingerprint
                             ))
                         }
                         else { // aca hace el enrol
