@@ -3,6 +3,9 @@ package expo.modules.fingernetxus
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.os.Build
 import android.util.Base64
 import android.util.Log
@@ -19,6 +22,7 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class ExpoFingernetxusModule : Module() {
 
@@ -61,7 +65,14 @@ class ExpoFingernetxusModule : Module() {
 
         Name("ExpoFingernetxus")
 
-        Events("onFingerpringCaptured", "onCaptureTemplate", "onEnrolTemplate", "onCaptureVerification", "onBluetoothStateOn", "onBluetoothStateOff")
+        Events(
+            "onFingerpringCaptured",
+            "onCaptureTemplate",
+            "onEnrolTemplate",
+            "onCaptureVerification",
+            "onBluetoothStateOn",
+            "onBluetoothStateOff"
+        )
 
         // If bluetooth is not active on the device, this function will request to turn it on
         Function("requestBluetoothAsync") {
@@ -91,7 +102,7 @@ class ExpoFingernetxusModule : Module() {
                             bluetoothPermissions,
                             1
                         )
-                    } else if(permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+                    } else if (permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         // Permission for Android 12 and above
                         ActivityCompat.requestPermissions(
                             activity,
@@ -101,7 +112,7 @@ class ExpoFingernetxusModule : Module() {
                     } else {
                         Log.i("ExpoFingernetxusModule", "Bluetooth permissions already granted")
                         permissionGranted = true
-                        if(currentAdapter != null && !currentAdapter!!.isEnabled){
+                        if (currentAdapter != null && !currentAdapter!!.isEnabled) {
                             currentAdapter?.enable()
                         }
 
@@ -139,7 +150,7 @@ class ExpoFingernetxusModule : Module() {
                         bluetoothPermissions,
                         1
                     )
-                } else if(permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+                } else if (permissionCheckSDKHightLevel != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     // Permission for Android 12 and above
                     ActivityCompat.requestPermissions(
                         activity,
@@ -215,9 +226,11 @@ class ExpoFingernetxusModule : Module() {
                         Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
 
-                        sendEvent("onFingerpringCaptured", mapOf(
-                            "image" to image
-                        ))
+                        sendEvent(
+                            "onFingerpringCaptured", mapOf(
+                                "image" to image
+                            )
+                        )
                     }
 
                     override fun onGetStdImageFail() {
@@ -236,9 +249,11 @@ class ExpoFingernetxusModule : Module() {
                         Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
 
-                        sendEvent("onFingerpringCaptured", mapOf(
-                            "image" to image
-                        ))
+                        sendEvent(
+                            "onFingerpringCaptured", mapOf(
+                                "image" to image
+                            )
+                        )
                     }
 
                     override fun onGetResImageFail() {
@@ -255,14 +270,22 @@ class ExpoFingernetxusModule : Module() {
                         System.arraycopy(model, 0, mMatData, 0, model.size)
                         mMatSize = model.size
 
-                        Log.i("ExpoFingernetxusModule", "mMatSize: $mMatSize and mRefSize: $mRefSize")
+                        Log.i(
+                            "ExpoFingernetxusModule",
+                            "mMatSize: $mMatSize and mRefSize: $mRefSize"
+                        )
 
                         if (mRefSize > 0) {
-                            val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
+                            val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(
+                                mRefData,
+                                mMatData
+                            )
                             Log.i("ExpoFingernetxusModule", "Score: $score")
-                            sendEvent("onCaptureTemplate", mapOf(
-                                "captureScore" to score
-                            ))
+                            sendEvent(
+                                "onCaptureTemplate", mapOf(
+                                    "captureScore" to score
+                                )
+                            )
                         }
                     }
 
@@ -278,19 +301,23 @@ class ExpoFingernetxusModule : Module() {
                     override fun onEnrolTemplateSuccess(model: ByteArray?) {
                         Log.i("ExpoFingernetxusModule", "onEnrolTemplateSuccess Data: $model")
 
-                        System.arraycopy(model!!, 0, mRefData,0, model.size)
+                        System.arraycopy(model!!, 0, mRefData, 0, model.size)
                         mRefSize = model.size;
                         Log.i("ExpoFingernetxusModule", "Enrol Template Success")
-                        sendEvent("onEnrolTemplate", mapOf(
-                            "enrolResult" to "Enrol Template Success"
-                        ))
+                        sendEvent(
+                            "onEnrolTemplate", mapOf(
+                                "enrolResult" to "Enrol Template Success"
+                            )
+                        )
                     }
 
                     override fun onEnrolTemplateFail() {
                         Log.e("ExpoFingernetxusModule", "Failed to Enrol")
-                        sendEvent("onEnrolTemplate", mapOf(
-                            "enrolResult" to "Failed to Enrol"
-                        ))
+                        sendEvent(
+                            "onEnrolTemplate", mapOf(
+                                "enrolResult" to "Failed to Enrol"
+                            )
+                        )
                     }
                 })
 
@@ -305,37 +332,46 @@ class ExpoFingernetxusModule : Module() {
                             mMatSize = model.size
 
                             if (mRefSize > 0) {
-                                val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(mRefData, mMatData)
+                                val score = asyncBluetoothReader?.bluetoothReader?.MatchTemplate(
+                                    mRefData,
+                                    mMatData
+                                )
                                 Log.i("ExpoFingernetxusModule", "Score: $score")
                                 val base64Template = Base64.encodeToString(model, Base64.DEFAULT)
-                                sendEvent("onCaptureTemplate", mapOf(
-                                    "captureScore" to score,
-                                    "template" to base64Template
-                                ))
+                                sendEvent(
+                                    "onCaptureTemplate", mapOf(
+                                        "captureScore" to score,
+                                        "template" to base64Template
+                                    )
+                                )
                             }
-                        } else if (worktype == 2){
+                        } else if (worktype == 2) {
                             Log.i("ExpoFingernetxusModule", "Model Object (incoming): $model")
 //                            val base64Data = Base64.encodeToString(model, Base64.DEFAULT)
 //                            Log.i("ExpoFingernetxusModule", "Base64 of Incomming: $base64Data")
 
 //                            val incommingTemplate = getBytesFromBase64(base64Data)
-                            val isValidLegacy = isMatchLegacy(preTemplate, model)
-                            val isValid = isMatch(preTemplate, model)
-                            val isValidFingerprint = isValid || isValidLegacy
+//                            val isValidLegacy = isMatchLegacy(preTemplate, model)
+//                            val isValid = isMatch(preTemplate, model)
+//                            val isValidFingerprint = isValid || isValidLegacy
+                            val isValidFP = isValidFingerprint(preTemplate, model)
 
-                            Log.i("ExpoFingernetxusModule", "isValid: $isValid")
-                            Log.i("ExpoFingernetxusModule", "isValidTry2: $isValidLegacy")
-                            sendEvent("onCaptureVerification", mapOf(
-                                "captureScore" to isValidFingerprint
-                            ))
-                        }
-                        else { // aca hace el enrol
+                            Log.i("ExpoFingernetxusModule", "isValidFP: $isValidFP")
+//                            Log.i("ExpoFingernetxusModule", "isValidTry2: $isValidLegacy")
+                            sendEvent(
+                                "onCaptureVerification", mapOf(
+                                    "captureScore" to isValidFP
+                                )
+                            )
+                        } else { // aca hace el enrol
                             System.arraycopy(model, 0, mRefData, 0, model.size)
                             mRefSize = model.size
                             Log.i("ExpoFingernetxusModule", "Enrol Template Success")
-                            sendEvent("onEnrolTemplate", mapOf(
-                                "enrolResult" to "Enrol Template Success"
-                            ))
+                            sendEvent(
+                                "onEnrolTemplate", mapOf(
+                                    "enrolResult" to "Enrol Template Success"
+                                )
+                            )
 
                         }
                     }
@@ -356,9 +392,11 @@ class ExpoFingernetxusModule : Module() {
                     override fun onBluetoothStateChange(p0: Int) {
                         Log.d("ExpoFingernetxusModule", "onBluetoothStateChange: $p0")
                         if (p0 == BluetoothReader.STATE_CONNECTED) {
-                            sendEvent("onBluetoothStateOn", mapOf(
-                                "bluetoothState" to "on"
-                            ))
+                            sendEvent(
+                                "onBluetoothStateOn", mapOf(
+                                    "bluetoothState" to "on"
+                                )
+                            )
                         }
                     }
 
@@ -368,9 +406,11 @@ class ExpoFingernetxusModule : Module() {
 
                     override fun onBluetoothStateLost(p0: Int) {
                         Log.d("ExpoFingernetxusModule", "onBluetoothStateLost: $p0")
-                        sendEvent("onBluetoothStateOn", mapOf(
-                            "bluetoothState" to "off"
-                        ))
+                        sendEvent(
+                            "onBluetoothStateOn", mapOf(
+                                "bluetoothState" to "off"
+                            )
+                        )
                     }
 
 
@@ -400,7 +440,7 @@ class ExpoFingernetxusModule : Module() {
                         // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
                         if (asyncBluetoothReader == null) {
                             image = "NO_CONNECTION"
-                        }else {
+                        } else {
                             // calls the function to get the image
                             asyncBluetoothReader!!.GetImageAndTemplate()
                         }
@@ -435,7 +475,7 @@ class ExpoFingernetxusModule : Module() {
                         // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
                         if (asyncBluetoothReader == null) {
                             template = "NO_CONNECTION"
-                        }else {
+                        } else {
                             // calls the function to get the image
 //                            asyncBluetoothReader!!.CaptureTemplateNoImage()
                             worktype = 1
@@ -459,10 +499,11 @@ class ExpoFingernetxusModule : Module() {
             if (applicationContext != null) {
                 Log.i("ExpoFingernetxusModule", "getting bluetooth connection state")
 
-                isBTEnabled = BluetoothReader.STATE_CONNECTED == asyncBluetoothReader?.bluetoothReader?.getState()
+                isBTEnabled =
+                    BluetoothReader.STATE_CONNECTED == asyncBluetoothReader?.bluetoothReader?.getState()
                 Log.i("ExpoFingernetxusModule", "Bluetooth connection state: $isBTEnabled")
                 return@Function isBTEnabled
-            }else{
+            } else {
                 Log.i("ExpoFingernetxusModule", "applicationContext is null")
                 return@Function isBTEnabled
             }
@@ -483,11 +524,14 @@ class ExpoFingernetxusModule : Module() {
                         "Bluetooth reader is connected: ${asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED}"
                     )
                     if (asyncBluetoothReader?.bluetoothReader?.getState() == BluetoothReader.STATE_CONNECTED) {
-                        Log.i("ExpoFingernetxusModule", "Bluetooth reader is connected and ready to enrol")
+                        Log.i(
+                            "ExpoFingernetxusModule",
+                            "Bluetooth reader is connected and ready to enrol"
+                        )
                         // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
                         if (asyncBluetoothReader == null) {
                             enrolResult = "NO_CONNECTION"
-                        }else {
+                        } else {
                             // calls the function to enrol template
 //                            asyncBluetoothReader!!.EnrolTempatelNoImage()
                             worktype = 0
@@ -545,7 +589,7 @@ class ExpoFingernetxusModule : Module() {
                         // checks if asyncBluetoothReader is null and if not, image variable is set to NO_CONNECTION
                         if (asyncBluetoothReader == null) {
                             template = "NO_CONNECTION"
-                        }else {
+                        } else {
                             // calls the function to get the image
 //                            asyncBluetoothReader!!.CaptureTemplateNoImage()
                             worktype = 2
@@ -573,7 +617,7 @@ class ExpoFingernetxusModule : Module() {
                 isBTEnabled = currentAdapter?.isEnabled!!
                 Log.i("ExpoFingernetxusModule", "Bluetooth state: $isBTEnabled")
                 return@Function isBTEnabled
-            }else{
+            } else {
                 Log.i("ExpoFingernetxusModule", "applicationContext is null")
                 return@Function isBTEnabled
             }
@@ -586,13 +630,13 @@ class ExpoFingernetxusModule : Module() {
 
         try {
             val incommingFP = FingerprintTemplate(toEvaluateFingerprint).dpi(500.0)
-                val existingFP = FingerprintTemplate(FingerprintImage(existingFingerprint).dpi(500.0))
+            val existingFP = FingerprintTemplate(FingerprintImage(existingFingerprint).dpi(500.0))
 
-                val matcher = FingerprintMatcher(incommingFP)
-                val similarity = matcher.match(existingFP)
+            val matcher = FingerprintMatcher(incommingFP)
+            val similarity = matcher.match(existingFP)
 
-                val threshold = 20.0
-                return similarity >= threshold
+            val threshold = 20.0
+            return similarity >= threshold
 
         } catch (e: IllegalArgumentException) {
             Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
@@ -605,13 +649,20 @@ class ExpoFingernetxusModule : Module() {
         }
     }
 
-    private fun isMatchLegacy(existingFingerprint: ByteArray, toEvaluateFingerprint: ByteArray): Boolean {
+    private fun isMatchLegacy(
+        existingFingerprint: ByteArray,
+        toEvaluateFingerprint: ByteArray
+    ): Boolean {
         return try {
             FingerprintMatcher().index(
                 FingerprintTemplate(
                     FingerprintImage().dpi(500.0).decode(existingFingerprint)
                 )
-            ).match(FingerprintTemplate(FingerprintImage().dpi(500.0).decode(toEvaluateFingerprint))) >= 20.0
+            ).match(
+                FingerprintTemplate(
+                    FingerprintImage().dpi(500.0).decode(toEvaluateFingerprint)
+                )
+            ) >= 20.0
         } catch (e: Exception) {
             Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
             false
@@ -621,6 +672,55 @@ class ExpoFingernetxusModule : Module() {
     fun getBytesFromBase64(data: String?): ByteArray? {
         return Base64.decode(data, 0)
     }
+
+    /**
+     * Fix Flip Fingerprint for comparations
+     */
+
+    private fun isValidFingerprint(current: ByteArray, incoming: ByteArray): Boolean {
+        // flip the incomming fingerprint and compare it with the current fingerprint
+        val flippedIncoming = getFlippedImage(incoming)
+        return isMatch(current, flippedIncoming!!) || isMatchLegacy(current, flippedIncoming)
+    }
+
+    private fun getFlippedImage(image: ByteArray): ByteArray? {
+        return getBytesFromBitmap(getFlippedBitmap(getBitmapFromBytes(image)!!)!!)
+    }
+
+    private fun getFlippedBitmap(bmp: Bitmap): Bitmap? {
+        return flip(bmp, -1.0f, 1.0f, (bmp.width.toFloat()) / 2.0f, (bmp.height.toFloat()) / 2.0f)
+    }
+
+    private fun getBitmapFromBytes(bytes: ByteArray): Bitmap? {
+        val decodeByteArray = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        return decodeByteArray
+    }
+
+    private fun getBytesFromBitmap(bmp: Bitmap): ByteArray? {
+        val stream = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        val byteArray = stream.toByteArray()
+        return byteArray
+    }
+
+
+    private fun flip(toFlip: Bitmap, x: Float, y: Float, cx: Float, cy: Float): Bitmap? {
+        val matrix = Matrix()
+        matrix.postScale(x, y, cx, cy)
+        val createBitmap = Bitmap.createBitmap(
+            toFlip,
+            0,
+            0,
+            toFlip.width,
+            toFlip.height,
+            matrix,
+            true
+        )
+        return createBitmap
+    }
+
+
+
 
 } // end class
 
