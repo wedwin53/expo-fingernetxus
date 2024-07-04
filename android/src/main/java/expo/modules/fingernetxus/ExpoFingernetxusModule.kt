@@ -11,18 +11,25 @@ import android.util.Base64
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.bumptech.glide.Glide
 import com.fpreader.fpdevice.AsyncBluetoothReader
 import com.fpreader.fpdevice.BluetoothReader
 import com.machinezoo.sourceafis.FingerprintImage
+import com.machinezoo.sourceafis.FingerprintImageOptions
 import com.machinezoo.sourceafis.FingerprintMatcher
 import com.machinezoo.sourceafis.FingerprintTemplate
+
+
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.apache.commons.io.output.ByteArrayOutputStream
+
 
 class ExpoFingernetxusModule : Module() {
 
@@ -223,8 +230,10 @@ class ExpoFingernetxusModule : Module() {
                         Log.i("ExpoFingernetxusModule", "onGetStdImageSuccess Data: $data")
                         //Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
+
                         Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
+
 
                         sendEvent(
                             "onFingerpringCaptured", mapOf(
@@ -248,6 +257,17 @@ class ExpoFingernetxusModule : Module() {
                         val base64Data = Base64.encodeToString(data, Base64.DEFAULT)
                         Log.i("ExpoFingernetxusModule", "Base64: $base64Data")
                         image = "data:image/png;base64,$base64Data"
+
+                        if(worktype == 4){
+                            // check if is valid fingerprint comparint with the preTemplate
+                            val isValidFP = isValidFingerprint(preTemplate, data!!)
+                            Log.i("ExpoFingernetxusModule", "isValidFP: $isValidFP")
+                            sendEvent(
+                                "onCaptureVerification", mapOf(
+                                    "captureScore" to isValidFP
+                                )
+                            )
+                        }
 
                         sendEvent(
                             "onFingerpringCaptured", mapOf(
@@ -570,6 +590,9 @@ class ExpoFingernetxusModule : Module() {
 
         }// end function enrolOnDemand
 
+        /**
+         * Once the enrollOndemand was made, this method should be called to verify the fingerprint
+         */
         AsyncFunction("captureOnDemandTemplate") { promise: Promise ->
 
             val activity = appContext.activityProvider?.currentActivity
@@ -592,7 +615,7 @@ class ExpoFingernetxusModule : Module() {
                         } else {
                             // calls the function to get the image
 //                            asyncBluetoothReader!!.CaptureTemplateNoImage()
-                            worktype = 2
+                            worktype = 4
                             asyncBluetoothReader!!.GetImageAndTemplate()
                         }
 
@@ -625,11 +648,22 @@ class ExpoFingernetxusModule : Module() {
 
     }// end definition
 
+    // DANGER ZONE
 
-    fun isMatch(existingFingerprint: ByteArray, toEvaluateFingerprint: ByteArray): Boolean {
+
+    // END DANGER ZONE
+
+
+    private fun isMatch(existingFingerprint: ByteArray, toEvaluateFingerprint: ByteArray): Boolean {
 
         try {
-            val incommingFP = FingerprintTemplate(toEvaluateFingerprint).dpi(500.0)
+            // DECODE the incoming fingerprint to know what type if image is
+            //val decodedFingerprint = decodeFingerprintImage(toEvaluateFingerprint)
+            val fingerprintImageOptions = FingerprintImageOptions()
+            fingerprintImageOptions.dpi(500.0)
+
+            val incommingFP =
+                FingerprintTemplate(FingerprintImage(toEvaluateFingerprint)).dpi(500.0)
             val existingFP = FingerprintTemplate(FingerprintImage(existingFingerprint).dpi(500.0))
 
             val matcher = FingerprintMatcher(incommingFP)
@@ -639,12 +673,11 @@ class ExpoFingernetxusModule : Module() {
             return similarity >= threshold
 
         } catch (e: IllegalArgumentException) {
-            Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
+            Log.e("ExpoFingernetxusModule", "isMatch::Error: ${e.message}")
             return false
         } catch (e: Exception) {
             // Maneja cualquier otra excepción no anticipada
-            // Nuevamente, considera registrar este error
-            Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
+            Log.e("ExpoFingernetxusModule", "isMatch::Error: ${e.message}")
             return false
         }
     }
@@ -654,23 +687,48 @@ class ExpoFingernetxusModule : Module() {
         toEvaluateFingerprint: ByteArray
     ): Boolean {
         return try {
-            FingerprintMatcher().index(
+            FingerprintMatcher(
                 FingerprintTemplate(
                     FingerprintImage().dpi(500.0).decode(existingFingerprint)
                 )
             ).match(
-                FingerprintTemplate(
-                    FingerprintImage().dpi(500.0).decode(toEvaluateFingerprint)
-                )
+                FingerprintTemplate(FingerprintImage().dpi(500.0).decode(toEvaluateFingerprint))
             ) >= 20.0
         } catch (e: Exception) {
-            Log.e("ExpoFingernetxusModule", "Error: ${e.message}")
+            Log.e("ExpoFingernetxusModule", "isMatchLegacy::Error: ${e.message}")
             false
         }
     }
 
-    fun getBytesFromBase64(data: String?): ByteArray? {
-        return Base64.decode(data, 0)
+    private fun getBytesFromBase64(data: String?): ByteArray? {
+        return Base64.decode(data, Base64.NO_WRAP)
+    }
+
+    private fun isMatchWithMatcher(
+        existingFingerprint: ByteArray?,
+        toEvaluateFingerprint: ByteArray?
+    ): Boolean {
+        try {
+            val decodedFingerprint: ByteArray =
+                decodeFingerprintImage(toEvaluateFingerprint!!)
+
+            val decodedExistingFingerprint: ByteArray =
+                decodeFingerprintImage(existingFingerprint!!)
+
+            val incommingFP = FingerprintTemplate(FingerprintImage(decodedFingerprint))
+            val existingFP = FingerprintTemplate(FingerprintImage(decodedExistingFingerprint))
+
+            val similarity = FingerprintMatcher(incommingFP).match(existingFP)
+            val threshold = 20.0
+            return similarity >= threshold
+        } catch (e: IllegalArgumentException) {
+            Log.e("ExpoFingernetxusModule", "isMatchWithMatcher::Error: ${e.message}")
+            return false
+        } catch (e: Exception) {
+            // Manejar cualquier otra excepción no anticipada
+            Log.e("ExpoFingernetxusModule", "isMatchWithMatcher::Error: ${e.message}")
+            return false
+        }
     }
 
     /**
@@ -680,23 +738,69 @@ class ExpoFingernetxusModule : Module() {
     private fun isValidFingerprint(current: ByteArray, incoming: ByteArray): Boolean {
         // flip the incomming fingerprint and compare it with the current fingerprint
         val flippedIncoming = getFlippedImage(incoming)
-        return isMatch(current, flippedIncoming!!) || isMatchLegacy(current, flippedIncoming)
+//        val rotatedImage = getRotatedImage(incoming)
+
+        return isMatch(current, incoming) || isMatch(current, flippedIncoming)
     }
 
-    private fun getFlippedImage(image: ByteArray): ByteArray? {
-        return getBytesFromBitmap(getFlippedBitmap(getBitmapFromBytes(image)!!)!!)
+    private fun getFlippedImage(image: ByteArray): ByteArray {
+        try {
+            Log.d("ExpoFingernetxusModule", "getFlippedImage::Image: ${image.size}")
+            return getBytesFromBitmap(getFlippedBitmap(getBitmapFromBytes(image)))
+
+        } catch (e: Exception) {
+            Log.e("ExpoFingernetxusModule", "getFlippedImage::Error: ${e.message}")
+            return ByteArray(0)
+        }
     }
 
-    private fun getFlippedBitmap(bmp: Bitmap): Bitmap? {
-        return flip(bmp, -1.0f, 1.0f, (bmp.width.toFloat()) / 2.0f, (bmp.height.toFloat()) / 2.0f)
+    private fun getRotatedImage(image: ByteArray): ByteArray {
+        try {
+            Log.d("ExpoFingernetxusModule", "getRotatedImage::Image: ${image.size}")
+            return getBytesFromBitmap(getRotatedBitmap(getBitmapFromBytes(image)))
+        } catch (e: Exception) {
+            Log.e("ExpoFingernetxusModule", "getRotatedImage::Error: ${e.message}")
+            return ByteArray(0)
+        }
     }
 
-    private fun getBitmapFromBytes(bytes: ByteArray): Bitmap? {
-        val decodeByteArray = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        return decodeByteArray
+    private fun getFlippedBitmap(bmp: Bitmap): Bitmap {
+        try {
+            return flip(
+                bmp,
+                -1.0f,
+                1.0f,
+                (bmp.width.toFloat()) / 2.0f,
+                (bmp.height.toFloat()) / 2.0f
+            )
+        } catch (e: Exception) {
+            Log.e("ExpoFingernetxusModule", "getFlippedBitmap::Error: ${e.message}")
+            return Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+        }
     }
 
-    private fun getBytesFromBitmap(bmp: Bitmap): ByteArray? {
+    private fun getRotatedBitmap(bmp: Bitmap): Bitmap {
+        try {
+            return rotateBitmap(bmp)
+        } catch (e: Exception) {
+            Log.e("ExpoFingernetxusModule", "getRotatedBitmap::Error: ${e.message}")
+            return Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+        }
+    }
+
+    private fun getBitmapFromBytes(bytes: ByteArray): Bitmap {
+
+        try {
+            Log.d("ExpoFingernetxusModule", "getBitmapFromBytes::Bytes: ${bytes.size}")
+            val decodeByteArray = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            return decodeByteArray
+        } catch (e: Exception) {
+            Log.e("ExpoFingernetxusModule", "getBitmapFromBytes::Error: ${e.message}")
+            return Bitmap.createBitmap(256, 288, Bitmap.Config.ARGB_8888)
+        }
+    }
+
+    private fun getBytesFromBitmap(bmp: Bitmap): ByteArray {
         val stream = ByteArrayOutputStream()
         bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
         val byteArray = stream.toByteArray()
@@ -704,7 +808,7 @@ class ExpoFingernetxusModule : Module() {
     }
 
 
-    private fun flip(toFlip: Bitmap, x: Float, y: Float, cx: Float, cy: Float): Bitmap? {
+    private fun flip(toFlip: Bitmap, x: Float, y: Float, cx: Float, cy: Float): Bitmap {
         val matrix = Matrix()
         matrix.postScale(x, y, cx, cy)
         val createBitmap = Bitmap.createBitmap(
@@ -719,7 +823,45 @@ class ExpoFingernetxusModule : Module() {
         return createBitmap
     }
 
+    private fun rotateBitmap(toRotate: Bitmap): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(180f) // Rotar 180 grados
+        return Bitmap.createBitmap(
+            toRotate,
+            0,
+            0,
+            toRotate.width,
+            toRotate.height,
+            matrix,
+            true
+        )
+    }
 
+    private fun decodeFingerprintImage(imageData: ByteArray?): ByteArray {
+        // Decodificar el byte array a un Bitmap
+        val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData!!.size)
+            ?: throw java.lang.IllegalArgumentException("Unable to decode image.")
+
+        // Verificar que el Bitmap no sea nulo
+
+        // Convertir el Bitmap a un array de bytes (grayscale)
+        val width = bitmap.width
+        val height = bitmap.height
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+        val grayscale = ByteArray(width * height)
+        for (i in pixels.indices) {
+            val pixel = pixels[i]
+            val red = (pixel shr 16) and 0xFF
+            val green = (pixel shr 8) and 0xFF
+            val blue = pixel and 0xFF
+            val gray = (red + green + blue) / 3
+            grayscale[i] = gray.toByte()
+        }
+
+        return grayscale
+    }
 
 
 } // end class

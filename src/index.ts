@@ -1,9 +1,9 @@
 // import { NativeModulesProxy, EventEmitter, Subscription } from 'expo-modules-core';
-import { EventEmitter, Subscription } from 'expo-modules-core';
+import { EventEmitter, Subscription } from "expo-modules-core";
 
 // Import the native module. On web, it will be resolved to ExpoFingernetxus.web.ts
 // and on native platforms to ExpoFingernetxus.ts
-import ExpoFingernetxusModule from './ExpoFingernetxusModule';
+import ExpoFingernetxusModule from "./ExpoFingernetxusModule";
 // import ExpoFingernetxusView from './ExpoFingernetxusView';
 // import { ChangeEventPayload, ExpoFingernetxusViewProps } from './ExpoFingernetxus.types';
 
@@ -24,11 +24,10 @@ export async function captureFingerprintImage() {
   return await ExpoFingernetxusModule.captureFingerprintImageAsync();
 }
 
-
 export function addFingerprintCaptureListener(
   listener: (event: any) => void
-): Subscription { 
-  return emitter.addListener('onFingerpringCaptured', listener);
+): Subscription {
+  return emitter.addListener("onFingerpringCaptured", listener);
 }
 
 export function requestTurnOnBluetooth() {
@@ -37,8 +36,8 @@ export function requestTurnOnBluetooth() {
 
 export function addFingerprintCaptureTemplateListener(
   listener: (event: any) => void
-): Subscription { 
-  return emitter.addListener('onCaptureTemplate', listener);
+): Subscription {
+  return emitter.addListener("onCaptureTemplate", listener);
 }
 
 export function getBluetoothState() {
@@ -51,8 +50,8 @@ export async function captureFingerprintTemplate() {
 
 export function addEnrolTemplateListener(
   listener: (event: any) => void
-): Subscription { 
-  return emitter.addListener('onEnrolTemplate', listener);
+): Subscription {
+  return emitter.addListener("onEnrolTemplate", listener);
 }
 
 export async function onEnrolTemplateAsync() {
@@ -69,12 +68,14 @@ export async function captureFingerprintOnDemandTemplate() {
 
 export function addCaptureVerificationListener(
   listener: (event: any) => void
-): Subscription { 
-  return emitter.addListener('onCaptureVerification', listener);
+): Subscription {
+  return emitter.addListener("onCaptureVerification", listener);
 }
 
-export function addBluetoothStateChangeListener(listener: (event: any) => void) {
-  return emitter.addListener('onBluetoothStateOn', listener);
+export function addBluetoothStateChangeListener(
+  listener: (event: any) => void
+) {
+  return emitter.addListener("onBluetoothStateOn", listener);
 }
 
 export function getHostBluetoothState() {
