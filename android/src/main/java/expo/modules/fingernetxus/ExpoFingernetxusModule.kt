@@ -267,13 +267,20 @@ class ExpoFingernetxusModule : Module() {
                                     "captureScore" to isValidFP
                                 )
                             )
+                            // send the image too
+                            sendEvent(
+                                "onFingerpringCaptured", mapOf(
+                                    "image" to image
+                                )
+                            )
+                        } else {
+                            sendEvent(
+                                "onFingerpringCaptured", mapOf(
+                                    "image" to image
+                                )
+                            )
                         }
 
-                        sendEvent(
-                            "onFingerpringCaptured", mapOf(
-                                "image" to image
-                            )
-                        )
                     }
 
                     override fun onGetResImageFail() {
@@ -647,11 +654,6 @@ class ExpoFingernetxusModule : Module() {
         } // End getBlueThoothConnectionState
 
     }// end definition
-
-    // DANGER ZONE
-
-
-    // END DANGER ZONE
 
 
     private fun isMatch(existingFingerprint: ByteArray, toEvaluateFingerprint: ByteArray): Boolean {
